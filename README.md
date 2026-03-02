@@ -16,7 +16,7 @@ npm install
 npm start
 ```
 
-Backend mặc định chạy tại: http://localhost:5000
+Backend mặc định chạy tại: http://localhost:9999
 
 ## Chạy Frontend
 
@@ -31,4 +31,4 @@ Frontend mặc định chạy tại: http://localhost:3000
 ## Lưu ý
 
 - Cài dependency cho cả `backend` và `frontend` (mỗi thư mục có `package.json` riêng).
-- File `.env` của backend nên được tạo từ mẫu và không commit lên Git.
+
