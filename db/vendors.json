@@ -1,0 +1,29 @@
+[
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439011" },
+    "userId": { "$oid": "507f1f77bcf86cd799439002" },
+    "restaurantName": "Tiệc cưới Hoàng Gia",
+    "address": "123 Nguyễn Huệ, Quận 1, TP.HCM",
+    "description": "Nhà hàng tiệc cưới cao cấp, sức chứa lớn, view đẹp.",
+    "status": "Active",
+    "rejectionReason": null
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439012" },
+    "userId": { "$oid": "507f1f77bcf86cd799439003" },
+    "restaurantName": "Sảnh cưới Mai Vàng",
+    "address": "456 Lê Lợi, Quận 3, TP.HCM",
+    "description": "Sảnh cưới mới xây, đang chờ duyệt hồ sơ.",
+    "status": "Pending",
+    "rejectionReason": null
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439013" },
+    "userId": { "$oid": "507f1f77bcf86cd799439008" },
+    "restaurantName": "Nhà hàng bị từ chối",
+    "address": "789 Trần Hưng Đạo, Quận 5, TP.HCM",
+    "description": "Hồ sơ không đủ điều kiện.",
+    "status": "Rejected",
+    "rejectionReason": "Thiếu giấy phép kinh doanh và giấy an toàn phòng cháy."
+  }
+]

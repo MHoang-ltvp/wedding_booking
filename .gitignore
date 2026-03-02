@@ -1,0 +1,13 @@
+# Bỏ qua node_modules của cả 2 bên
+backend/node_modules/
+frontend/node_modules/
+
+# Environment
+.env
+.env.local
+*.env
+
+# Build & cache
+frontend/dist/
+*.log
+.DS_Store

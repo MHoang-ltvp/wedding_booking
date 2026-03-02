@@ -1,0 +1,47 @@
+[
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439021" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439011" },
+    "name": "Sảnh Bạch Dương",
+    "capacity": 300,
+    "basePrice": 45000000,
+    "images": [
+      "https://example.com/hall1-1.jpg",
+      "https://example.com/hall1-2.jpg",
+      "https://example.com/hall1-3.jpg"
+    ],
+    "isVisible": true
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439022" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439011" },
+    "name": "Sảnh Kim Cương",
+    "capacity": 500,
+    "basePrice": 65000000,
+    "images": [
+      "https://example.com/hall2-1.jpg",
+      "https://example.com/hall2-2.jpg"
+    ],
+    "isVisible": true
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439023" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439012" },
+    "name": "Sảnh Mai Vàng A",
+    "capacity": 200,
+    "basePrice": 35000000,
+    "images": [
+      "https://example.com/hall3-1.jpg"
+    ],
+    "isVisible": false
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439024" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439012" },
+    "name": "Sảnh Mai Vàng B",
+    "capacity": 150,
+    "basePrice": 28000000,
+    "images": [],
+    "isVisible": false
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439031" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439011" },
+    "name": "Menu Tiêu chuẩn",
+    "type": "Menu",
+    "pricePerUnit": 150000,
+    "description": "Set 8 món: khai vị, soup, hải sản, thịt, rau, cơm, tráng miệng, đồ uống."
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439032" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439011" },
+    "name": "Menu Cao cấp",
+    "type": "Menu",
+    "pricePerUnit": 220000,
+    "description": "Set 10 món cao cấp, tôm hùm, bò Wagyu, rượu vang."
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439033" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439011" },
+    "name": "Trang trí Hoa tươi",
+    "type": "Decor",
+    "pricePerUnit": 12000000,
+    "description": "Cổng hoa, bàn tiệc, sân khấu hoa tươi."
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439034" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439011" },
+    "name": "Trang trí LED",
+    "type": "Decor",
+    "pricePerUnit": 8000000,
+    "description": "Đèn LED, backdrop, ánh sáng sân khấu."
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439035" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439012" },
+    "name": "Menu Cơ bản Mai Vàng",
+    "type": "Menu",
+    "pricePerUnit": 120000,
+    "description": "Set 7 món cơ bản (chỉ hiển thị khi vendor được duyệt)."
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439036" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439012" },
+    "name": "Decor đơn giản",
+    "type": "Decor",
+    "pricePerUnit": 5000000,
+    "description": "Bóng bay, backdrop đơn giản."
+  }
+]

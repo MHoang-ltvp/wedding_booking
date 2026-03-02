@@ -1,0 +1,58 @@
+[
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439001" },
+    "username": "admin",
+    "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
+    "role": "Admin",
+    "status": "Active"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439002" },
+    "username": "vendor_active",
+    "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
+    "role": "Vendor",
+    "status": "Active"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439003" },
+    "username": "vendor_pending",
+    "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
+    "role": "Vendor",
+    "status": "Active"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439004" },
+    "username": "customer1",
+    "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
+    "role": "Customer",
+    "status": "Active"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439005" },
+    "username": "customer2",
+    "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
+    "role": "Customer",
+    "status": "Active"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439006" },
+    "username": "guest_user",
+    "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
+    "role": "Guest",
+    "status": "Active"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439008" },
+    "username": "vendor_rejected",
+    "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
+    "role": "Vendor",
+    "status": "Active"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439007" },
+    "username": "inactive_customer",
+    "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
+    "role": "Customer",
+    "status": "Inactive"
+  }
+]

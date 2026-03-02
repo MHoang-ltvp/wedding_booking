@@ -1,0 +1,69 @@
+[
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439041" },
+    "customerId": { "$oid": "507f1f77bcf86cd799439004" },
+    "hallId": { "$oid": "507f1f77bcf86cd799439021" },
+    "weddingDate": "2025-12-25",
+    "session": "Evening",
+    "selectedPackages": [
+      { "packageId": { "$oid": "507f1f77bcf86cd799439031" }, "quantity": 200 },
+      { "packageId": { "$oid": "507f1f77bcf86cd799439033" }, "quantity": 1 }
+    ],
+    "totalPrice": 36000000,
+    "status": "Pending approval",
+    "paymentStatus": "Unpaid"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439042" },
+    "customerId": { "$oid": "507f1f77bcf86cd799439005" },
+    "hallId": { "$oid": "507f1f77bcf86cd799439021" },
+    "weddingDate": "2025-12-25",
+    "session": "Evening",
+    "selectedPackages": [
+      { "packageId": { "$oid": "507f1f77bcf86cd799439032" }, "quantity": 250 },
+      { "packageId": { "$oid": "507f1f77bcf86cd799439034" }, "quantity": 1 }
+    ],
+    "totalPrice": 63000000,
+    "status": "Confirmed",
+    "paymentStatus": "Paid"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439043" },
+    "customerId": { "$oid": "507f1f77bcf86cd799439004" },
+    "hallId": { "$oid": "507f1f77bcf86cd799439022" },
+    "weddingDate": "2026-03-15",
+    "session": "Morning",
+    "selectedPackages": [
+      { "packageId": { "$oid": "507f1f77bcf86cd799439031" }, "quantity": 400 }
+    ],
+    "totalPrice": 71000000,
+    "status": "Pending payment",
+    "paymentStatus": "Unpaid"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439044" },
+    "customerId": { "$oid": "507f1f77bcf86cd799439005" },
+    "hallId": { "$oid": "507f1f77bcf86cd799439021" },
+    "weddingDate": "2025-12-25",
+    "session": "Morning",
+    "selectedPackages": [
+      { "packageId": { "$oid": "507f1f77bcf86cd799439031" }, "quantity": 180 }
+    ],
+    "totalPrice": 39000000,
+    "status": "Confirmed",
+    "paymentStatus": "Paid"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439045" },
+    "customerId": { "$oid": "507f1f77bcf86cd799439004" },
+    "hallId": { "$oid": "507f1f77bcf86cd799439021" },
+    "weddingDate": "2026-01-10",
+    "session": "Evening",
+    "selectedPackages": [
+      { "packageId": { "$oid": "507f1f77bcf86cd799439033" }, "quantity": 1 }
+    ],
+    "totalPrice": 57000000,
+    "status": "Canceled",
+    "paymentStatus": "Unpaid"
+  }
+]

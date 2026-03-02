@@ -1,0 +1,17 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  padding: 0 1rem;
+}
+
+/* Container giới hạn rộng, căn giữa; tránh nội dung dàn trải full màn hình. */
+.container {
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
