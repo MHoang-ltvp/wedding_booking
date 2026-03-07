@@ -1,0 +1,31 @@
+[
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439011" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439002" },
+    "name": "Tiệc cưới Hoàng Gia",
+    "address": "123 Nguyễn Huệ, Quận 1, TP.HCM",
+    "description": "Nhà hàng tiệc cưới cao cấp, sức chứa lớn, view đẹp.",
+    "images": [
+      { "url": "https://example.com/r1-1.jpg", "public_id": "r1-1" }
+    ],
+    "status": "ACTIVE"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439012" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439003" },
+    "name": "Sảnh cưới Mai Vàng",
+    "address": "456 Lê Lợi, Quận 3, TP.HCM",
+    "description": "Sảnh cưới mới xây, không gian rộng rãi.",
+    "images": [],
+    "status": "ACTIVE"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439013" },
+    "vendorId": { "$oid": "507f1f77bcf86cd799439003" },
+    "name": "Nhà hàng Ẩn",
+    "address": "789 Trần Hưng Đạo, Quận 5, TP.HCM",
+    "description": "Nhà hàng tạm ẩn.",
+    "images": [],
+    "status": "HIDDEN"
+  }
+]

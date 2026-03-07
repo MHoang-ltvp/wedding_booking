@@ -2,6 +2,9 @@
 backend/node_modules/
 frontend/node_modules/
 
+# Context cho AI (không commit)
+.context-ai.md
+
 # Environment
 .env
 .env.local

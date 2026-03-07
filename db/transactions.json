@@ -1,0 +1,32 @@
+[
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439051" },
+    "bookingId": { "$oid": "507f1f77bcf86cd799439042" },
+    "userId": { "$oid": "507f1f77bcf86cd799439005" },
+    "amount": 25000000,
+    "type": "DEPOSIT",
+    "paymentMethod": "MOCK_GATEWAY",
+    "transactionCode": "TXN-MOCK-001",
+    "status": "PAID"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439052" },
+    "bookingId": { "$oid": "507f1f77bcf86cd799439042" },
+    "userId": { "$oid": "507f1f77bcf86cd799439005" },
+    "amount": 62000000,
+    "type": "FINAL_PAYMENT",
+    "paymentMethod": "MOCK_GATEWAY",
+    "transactionCode": "TXN-MOCK-002",
+    "status": "PAID"
+  },
+  {
+    "_id": { "$oid": "507f1f77bcf86cd799439053" },
+    "bookingId": { "$oid": "507f1f77bcf86cd799439041" },
+    "userId": { "$oid": "507f1f77bcf86cd799439004" },
+    "amount": 20000000,
+    "type": "DEPOSIT",
+    "paymentMethod": "MOCK_GATEWAY",
+    "transactionCode": null,
+    "status": "PENDING"
+  }
+]

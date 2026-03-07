@@ -2,29 +2,27 @@ const mongoose = require('mongoose');
 
 const servicePackageSchema = new mongoose.Schema(
   {
-    vendorId: {
+    restaurantId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Vendor',
+      ref: 'Restaurant',
       required: true,
     },
-    name: {
-      type: String,
-      required: true,
-    },
+    name: { type: String, required: true },
     type: {
       type: String,
+      enum: ['FOOD', 'DECORATION'],
       required: true,
-      enum: ['Menu', 'Decor'],
     },
-    pricePerUnit: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    description: {
+    unit: {
       type: String,
-      default: '',
+      enum: ['TABLE', 'PACKAGE'],
+      required: true,
     },
+    price: { type: Number, required: true },
+    items: [{ type: String }],
+    description: { type: String },
+    images: [{ url: String, public_id: String }],
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
