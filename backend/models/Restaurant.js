@@ -6,16 +6,28 @@ const restaurantSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+      unique: true, // 1 vendor -> 1 restaurant profile
     },
     name: { type: String, required: true },
     address: { type: String, required: true },
     description: { type: String },
+    contact: {
+      name: { type: String, default: '' },
+      phone: { type: String, default: '' },
+      email: { type: String, default: '' },
+    },
     images: [
       {
         url: String,
         public_id: String,
       },
     ],
+    approvalStatus: {
+      type: String,
+      enum: ['PENDING', 'APPROVED', 'REJECTED'],
+      default: 'PENDING',
+      index: true,
+    },
     status: {
       type: String,
       enum: ['ACTIVE', 'HIDDEN'],

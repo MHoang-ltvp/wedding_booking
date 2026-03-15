@@ -1,33 +1,284 @@
 /**
  * Restaurant Controller - Thành viên 2 (VHoang)
  * Vendor - Restaurant Management + Admin - Approval (danh sách nhà hàng)
- *
- * Viết logic vào các hàm dưới đây. Route gọi qua restaurant.routes.js.
- * Tạm thời chưa gắn middleware.
  */
 
-// POST /api/vendor/restaurants - Tạo hồ sơ nhà hàng mới
+const mongoose = require("mongoose");
+const Restaurant = require("../models/Restaurant");
+
+const isNonEmptyString = (value) =>
+  typeof value === "string" && value.trim().length > 0;
+
+const normalizeContact = (contact = {}) => {
+  if (!contact || typeof contact !== "object") return undefined;
+  const result = {};
+  if (typeof contact.name === "string") result.name = contact.name.trim();
+  if (typeof contact.phone === "string") result.phone = contact.phone.trim();
+  if (typeof contact.email === "string")
+    result.email = contact.email.trim().toLowerCase();
+  return result;
+};
+
+// POST /api/vendor/restaurants - Tạo một hồ sơ nhà hàng mới
 const create = async (req, res) => {
-  // TODO: Lấy vendorId từ req.user khi bật auth. Validate body (name, address, ...). Tạo Restaurant
-  res.json({ message: 'POST /api/vendor/restaurants - Viết logic tại đây (restaurant.controller.create)' });
+  try {
+    const vendorId = req.user?._id;
+    if (!vendorId)
+      return res
+        .status(401)
+        .json({ success: false, message: "Vui lòng đăng nhập." });
+
+    const existing = await Restaurant.findOne({ vendorId });
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: "Vendor đã có hồ sơ nhà hàng.",
+        restaurant: existing,
+      });
+    }
+
+    const { name, address, description, contact, images, status } =
+      req.body || {};
+
+    if (!isNonEmptyString(name) || !isNonEmptyString(address)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu name hoặc address." });
+    }
+
+    const restaurant = await Restaurant.create({
+      vendorId,
+      name: name.trim(),
+      address: address.trim(),
+      description: typeof description === "string" ? description.trim() : "",
+      contact: normalizeContact(contact),
+      images: Array.isArray(images) ? images : [],
+      approvalStatus: "PENDING",
+      status: status === "HIDDEN" ? "HIDDEN" : "ACTIVE",
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Tạo hồ sơ nhà hàng thành công.",
+      restaurant,
+    });
+  } catch (err) {
+    if (err?.code === 11000) {
+      return res
+        .status(409)
+        .json({ success: false, message: "Vendor đã có hồ sơ nhà hàng." });
+    }
+    console.error("restaurant.create error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi tạo hồ sơ nhà hàng." });
+  }
 };
 
 // PUT /api/vendor/restaurants/:id - Cập nhật thông tin nhà hàng
 const update = async (req, res) => {
-  // TODO: Chỉ vendor sở hữu. Validate body, update Restaurant
-  res.json({ message: 'PUT /api/vendor/restaurants/:id - Viết logic tại đây (restaurant.controller.update)' });
+  try {
+    const vendorId = req.user?._id;
+    if (!vendorId)
+      return res
+        .status(401)
+        .json({ success: false, message: "Vui lòng đăng nhập." });
+
+    const restaurantId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Restaurant id không hợp lệ." });
+    }
+
+    const { name, address, description, contact, images, status } =
+      req.body || {};
+    const updates = {};
+
+    if (name !== undefined) {
+      if (!isNonEmptyString(name))
+        return res
+          .status(400)
+          .json({ success: false, message: "name không được rỗng." });
+      updates.name = name.trim();
+    }
+    if (address !== undefined) {
+      if (!isNonEmptyString(address)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "address không được rỗng." });
+      }
+      updates.address = address.trim();
+    }
+    if (description !== undefined) {
+      updates.description =
+        typeof description === "string" ? description.trim() : "";
+    }
+    if (contact !== undefined) {
+      const normalized = normalizeContact(contact);
+      if (normalized) {
+        if (normalized.name !== undefined)
+          updates["contact.name"] = normalized.name;
+        if (normalized.phone !== undefined)
+          updates["contact.phone"] = normalized.phone;
+        if (normalized.email !== undefined)
+          updates["contact.email"] = normalized.email;
+      }
+    }
+    if (images !== undefined) {
+      if (!Array.isArray(images))
+        return res
+          .status(400)
+          .json({ success: false, message: "images phải là mảng." });
+      updates.images = images;
+    }
+    if (status !== undefined) {
+      const allowed = ["ACTIVE", "HIDDEN"];
+      if (!allowed.includes(status)) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "status không hợp lệ (ACTIVE|HIDDEN).",
+          });
+      }
+      updates.status = status;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Không có dữ liệu cập nhật." });
+    }
+
+    const restaurant = await Restaurant.findOneAndUpdate(
+      { _id: restaurantId, vendorId },
+      { $set: updates },
+      { new: true, runValidators: true },
+    );
+
+    if (!restaurant) {
+      return res
+        .status(404)
+        .json({
+          success: false,
+          message: "Không tìm thấy nhà hàng của vendor.",
+        });
+    }
+
+    return res.json({
+      success: true,
+      message: "Cập nhật nhà hàng thành công.",
+      restaurant,
+    });
+  } catch (err) {
+    console.error("restaurant.update error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi cập nhật nhà hàng." });
+  }
 };
 
-// GET /api/vendor/restaurants/me - Lấy nhà hàng của Vendor đang đăng nhập
+// GET /api/vendor/restaurants/me - Lấy thông tin nhà hàng của Vendor đang đăng nhập
 const getMyRestaurant = async (req, res) => {
-  // TODO: req.user.id -> tìm Restaurant theo vendorId, trả 1 document hoặc 404
-  res.json({ message: 'GET /api/vendor/restaurants/me - Viết logic tại đây (restaurant.controller.getMyRestaurant)' });
+  try {
+    const vendorId = req.user?._id;
+    if (!vendorId)
+      return res
+        .status(401)
+        .json({ success: false, message: "Vui lòng đăng nhập." });
+
+    const restaurant = await Restaurant.findOne({ vendorId });
+    if (!restaurant)
+      return res
+        .status(404)
+        .json({ success: false, message: "Chưa có hồ sơ nhà hàng." });
+
+    return res.json({ success: true, restaurant });
+  } catch (err) {
+    console.error("restaurant.getMyRestaurant error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi lấy thông tin nhà hàng." });
+  }
 };
 
-// GET /api/admin/restaurants - Danh sách toàn bộ nhà hàng, lọc theo trạng thái
+// GET /api/admin/restaurants - Danh sách toàn bộ nhà hàng, lọc theo trạng thái duyệt
 const getAdminRestaurants = async (req, res) => {
-  // TODO: Chỉ Admin. Query status (ACTIVE/HIDDEN), phân trang. Populate vendorId nếu cần
-  res.json({ message: 'GET /api/admin/restaurants - Viết logic tại đây (restaurant.controller.getAdminRestaurants)' });
+  try {
+    const {
+      approvalStatus,
+      status,
+      vendorId,
+      search,
+      page = 1,
+      limit = 10,
+    } = req.query || {};
+
+    const filter = {};
+
+    if (approvalStatus !== undefined) {
+      const allowed = ["PENDING", "APPROVED", "REJECTED"];
+      if (!allowed.includes(approvalStatus)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "approvalStatus không hợp lệ." });
+      }
+      filter.approvalStatus = approvalStatus;
+    }
+
+    if (status !== undefined) {
+      const allowed = ["ACTIVE", "HIDDEN"];
+      if (!allowed.includes(status))
+        return res
+          .status(400)
+          .json({ success: false, message: "status không hợp lệ." });
+      filter.status = status;
+    }
+
+    if (vendorId !== undefined) {
+      if (!mongoose.Types.ObjectId.isValid(vendorId)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "vendorId không hợp lệ." });
+      }
+      filter.vendorId = vendorId;
+    }
+
+    if (search && typeof search === "string" && search.trim()) {
+      const q = search.trim();
+      filter.$or = [
+        { name: { $regex: q, $options: "i" } },
+        { address: { $regex: q, $options: "i" } },
+      ];
+    }
+
+    const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
+    const safePage = Math.max(parseInt(page, 10) || 1, 1);
+    const skip = (safePage - 1) * safeLimit;
+
+    const [total, items] = await Promise.all([
+      Restaurant.countDocuments(filter),
+      Restaurant.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(safeLimit)
+        .populate("vendorId", "email fullName phone role status"),
+    ]);
+
+    return res.json({
+      success: true,
+      page: safePage,
+      limit: safeLimit,
+      total,
+      items,
+    });
+  } catch (err) {
+    console.error("restaurant.getAdminRestaurants error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi lấy danh sách nhà hàng." });
+  }
 };
 
 module.exports = {
