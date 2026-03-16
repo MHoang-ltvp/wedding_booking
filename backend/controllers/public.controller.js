@@ -1,7 +1,40 @@
 /**
- * Public Controller - Thành viên 4 (Tdung)
+ * DANH SÁCH API TEST CHO POSTMAN - PUBLIC VIEWS & SEARCH ENGINE (Tdung)
+ * Base URL: http://localhost:9999
+ * Lưu ý: Thay thế [ID_NHA_HANG] và [ID_SANH] bằng ObjectId thực tế trong DB.
+ 
 
- */
+// 1. TÌM KIẾM & LIỆT KÊ NHÀ HÀNG
+// Lấy tất cả & Phân trang cơ bản:
+GET http://localhost:9999/api/public/restaurants?page=1&limit=10
+
+// Test Full Bộ Lọc (Tên, địa chỉ, sức chứa, giá tiền):
+GET http://localhost:9999/api/public/restaurants?page=1&limit=10&search=Palace&address=Hanoi&minCapacity=100&maxCapacity=500&minPrice=1000000&maxPrice=5000000
+
+// 2. CHI TIẾT NHÀ HÀNG
+// Xem chi tiết nhà hàng (Kèm danh sách sảnh và dịch vụ):
+GET http://localhost:9999/api/public/restaurants/[ID_NHA_HANG]
+
+// 3. DANH SÁCH SẢNH CỦA NHÀ HÀNG
+// Lấy tất cả sảnh:
+GET http://localhost:9999/api/public/restaurants/[ID_NHA_HANG]/halls
+
+// Lọc sảnh theo sức chứa và giá:
+GET http://localhost:9999/api/public/restaurants/[ID_NHA_HANG]/halls?minCapacity=200&maxPrice=3000000
+
+// 4. DANH SÁCH DỊCH VỤ (MENU / TRANG TRÍ)
+// Lấy tất cả dịch vụ (tự động nhóm):
+GET http://localhost:9999/api/public/restaurants/[ID_NHA_HANG]/services
+
+// Lọc chỉ lấy Menu đồ ăn:
+GET http://localhost:9999/api/public/restaurants/[ID_NHA_HANG]/services?type=FOOD
+
+// Lọc chỉ lấy Gói trang trí:
+GET http://localhost:9999/api/public/restaurants/[ID_NHA_HANG]/services?type=DECORATION
+
+// 5. KIỂM TRA LỊCH TRỐNG (AVAILABILITY)
+// Kiểm tra lịch sảnh theo ngày (YYYY-MM-DD):
+GET http://localhost:9999/api/public/halls/[ID_SANH]/availability?date=2026-10-20  */
 
 const mongoose = require('mongoose');
 const { Restaurant, Hall, ServicePackage, Booking } = require('../models');
