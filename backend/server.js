@@ -14,11 +14,8 @@ const PORT = process.env.PORT || 9999;
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/vendor/halls', hallRoutes);
-app.use('/api/vendor/services', serviceRoutes);
-
-const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
+const routes = require('./routes');
+app.use('/api', routes);
 
 connectDB();
 

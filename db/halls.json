@@ -1,47 +1,52 @@
 [
   {
     "_id": { "$oid": "507f1f77bcf86cd799439021" },
-    "vendorId": { "$oid": "507f1f77bcf86cd799439011" },
+    "restaurantId": { "$oid": "507f1f77bcf86cd799439011" },
     "name": "Sảnh Bạch Dương",
     "capacity": 300,
+    "area": 450,
     "basePrice": 45000000,
+    "description": "Sảnh lớn, view sân vườn.",
     "images": [
-      "https://example.com/hall1-1.jpg",
-      "https://example.com/hall1-2.jpg",
-      "https://example.com/hall1-3.jpg"
+      { "url": "https://example.com/hall1-1.jpg", "public_id": "h1-1" }
     ],
-    "isVisible": true
+    "status": "AVAILABLE",
+    "isDeleted": false
   },
   {
     "_id": { "$oid": "507f1f77bcf86cd799439022" },
-    "vendorId": { "$oid": "507f1f77bcf86cd799439011" },
+    "restaurantId": { "$oid": "507f1f77bcf86cd799439011" },
     "name": "Sảnh Kim Cương",
     "capacity": 500,
+    "area": 700,
     "basePrice": 65000000,
-    "images": [
-      "https://example.com/hall2-1.jpg",
-      "https://example.com/hall2-2.jpg"
-    ],
-    "isVisible": true
+    "description": "Sảnh VIP, sức chứa lớn.",
+    "images": [],
+    "status": "AVAILABLE",
+    "isDeleted": false
   },
   {
     "_id": { "$oid": "507f1f77bcf86cd799439023" },
-    "vendorId": { "$oid": "507f1f77bcf86cd799439012" },
+    "restaurantId": { "$oid": "507f1f77bcf86cd799439012" },
     "name": "Sảnh Mai Vàng A",
     "capacity": 200,
+    "area": 280,
     "basePrice": 35000000,
-    "images": [
-      "https://example.com/hall3-1.jpg"
-    ],
-    "isVisible": false
+    "description": "Sảnh tầng 2.",
+    "images": [],
+    "status": "AVAILABLE",
+    "isDeleted": false
   },
   {
     "_id": { "$oid": "507f1f77bcf86cd799439024" },
-    "vendorId": { "$oid": "507f1f77bcf86cd799439012" },
-    "name": "Sảnh Mai Vàng B",
+    "restaurantId": { "$oid": "507f1f77bcf86cd799439012" },
+    "name": "Sảnh Bảo trì",
     "capacity": 150,
+    "area": 200,
     "basePrice": 28000000,
+    "description": "Đang bảo trì.",
     "images": [],
-    "isVisible": false
+    "status": "MAINTENANCE",
+    "isDeleted": false
   }
 ]

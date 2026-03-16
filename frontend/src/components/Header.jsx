@@ -23,7 +23,7 @@ function Header() {
         <nav>
           {user ? (
             <>
-              <span style={{ marginRight: '0.5rem' }}>{user.username}</span>
+              <span style={{ marginRight: '0.5rem' }}>{user.fullName || user.email}</span>
               <button type="button" onClick={handleLogout}>
                 Đăng xuất
               </button>

@@ -2,33 +2,23 @@ const mongoose = require('mongoose');
 
 const hallSchema = new mongoose.Schema(
   {
-    vendorId: {
+    restaurantId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Vendor',
+      ref: 'Restaurant',
       required: true,
     },
-    name: {
+    name: { type: String, required: true },
+    capacity: { type: Number, required: true },
+    area: { type: Number },
+    basePrice: { type: Number, required: true },
+    description: { type: String },
+    images: [{ url: String, public_id: String }],
+    status: {
       type: String,
-      required: true,
+      enum: ['AVAILABLE', 'MAINTENANCE', 'LOCKED'],
+      default: 'AVAILABLE',
     },
-    capacity: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-    basePrice: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    images: {
-      type: [String],
-      default: [],
-    },
-    isVisible: {
-      type: Boolean,
-      default: true,
-    },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

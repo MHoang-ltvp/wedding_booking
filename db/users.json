@@ -1,58 +1,56 @@
 [
   {
     "_id": { "$oid": "507f1f77bcf86cd799439001" },
-    "username": "admin",
+    "email": "admin@wedding.vn",
     "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
-    "role": "Admin",
-    "status": "Active"
+    "fullName": "Admin Hệ thống",
+    "phone": "0900111001",
+    "role": "ADMIN",
+    "status": "ACTIVE"
   },
   {
     "_id": { "$oid": "507f1f77bcf86cd799439002" },
-    "username": "vendor_active",
+    "email": "vendor1@restaurant.vn",
     "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
-    "role": "Vendor",
-    "status": "Active"
+    "fullName": "Nguyễn Văn Vendor",
+    "phone": "0900222002",
+    "role": "VENDOR",
+    "status": "ACTIVE"
   },
   {
     "_id": { "$oid": "507f1f77bcf86cd799439003" },
-    "username": "vendor_pending",
+    "email": "vendor2@restaurant.vn",
     "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
-    "role": "Vendor",
-    "status": "Active"
+    "fullName": "Trần Chủ Nhà Hàng",
+    "phone": "0900333003",
+    "role": "VENDOR",
+    "status": "ACTIVE"
   },
   {
     "_id": { "$oid": "507f1f77bcf86cd799439004" },
-    "username": "customer1",
+    "email": "customer1@gmail.com",
     "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
-    "role": "Customer",
-    "status": "Active"
+    "fullName": "Lê Khách Hàng",
+    "phone": "0900444004",
+    "role": "CUSTOMER",
+    "status": "ACTIVE"
   },
   {
     "_id": { "$oid": "507f1f77bcf86cd799439005" },
-    "username": "customer2",
+    "email": "customer2@gmail.com",
     "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
-    "role": "Customer",
-    "status": "Active"
-  },
-  {
-    "_id": { "$oid": "507f1f77bcf86cd799439006" },
-    "username": "guest_user",
-    "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
-    "role": "Guest",
-    "status": "Active"
-  },
-  {
-    "_id": { "$oid": "507f1f77bcf86cd799439008" },
-    "username": "vendor_rejected",
-    "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
-    "role": "Vendor",
-    "status": "Active"
+    "fullName": "Phạm Thu Cưới",
+    "phone": "0900555005",
+    "role": "CUSTOMER",
+    "status": "ACTIVE"
   },
   {
     "_id": { "$oid": "507f1f77bcf86cd799439007" },
-    "username": "inactive_customer",
+    "email": "locked@customer.vn",
     "password": "$2a$10$rQZ8K9X9Y9Z9A9B9C9D9OuKpLqMnOpQrStUvWxYzAbCdEfGhIjKlMn",
-    "role": "Customer",
-    "status": "Inactive"
+    "fullName": "Tài khoản Bị Khóa",
+    "phone": "0900777007",
+    "role": "CUSTOMER",
+    "status": "LOCKED"
   }
 ]

@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:9999';
 
 /**
- * Trang đăng nhập: form username/password, gọi POST /api/auth/login,
- * lưu token + user vào localStorage, redirect về /. Hiển thị lỗi từ API dưới form.
+ * Trang đăng nhập: form email/password, gọi POST /api/auth/login,
+ * lưu token + user vào localStorage, redirect về /.
  */
 function Login() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ function Login() {
     setLoading(true);
     try {
       const { data } = await axios.post(`${API_BASE}/api/auth/login`, {
-        username: username.trim(),
+        email: email.trim(),
         password,
       });
       if (data.success && data.token && data.user) {
@@ -46,15 +46,15 @@ function Login() {
       <h1>Đăng nhập</h1>
       <form onSubmit={handleSubmit} style={{ marginTop: '1rem', maxWidth: '320px' }}>
         <div style={{ marginBottom: '0.5rem' }}>
-          <label htmlFor="username">Tên đăng nhập</label>
+          <label htmlFor="email">Email</label>
           <br />
           <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
-            autoComplete="username"
+            autoComplete="email"
             style={{ width: '100%', padding: '0.35rem' }}
           />
         </div>
@@ -78,6 +78,9 @@ function Login() {
       {error && (
         <p style={{ marginTop: '0.75rem', color: '#c00' }}>{error}</p>
       )}
+      <p style={{ marginTop: '1rem' }}>
+        Chưa có tài khoản? <Link to="/register">Đăng ký</Link>
+      </p>
     </div>
   );
 }

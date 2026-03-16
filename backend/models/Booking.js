@@ -1,64 +1,33 @@
 const mongoose = require('mongoose');
 
-const selectedPackageSchema = new mongoose.Schema(
+const bookingServiceSchema = new mongoose.Schema(
   {
-    packageId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'ServicePackage',
-      required: true,
-    },
-    quantity: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
+    packageId: { type: mongoose.Schema.Types.ObjectId, ref: 'ServicePackage' },
+    type: { type: String, enum: ['FOOD', 'DECORATION'] },
+    snapshotPrice: { type: Number, required: true },
+    quantity: { type: Number, required: true, default: 1 },
   },
   { _id: false }
 );
 
 const bookingSchema = new mongoose.Schema(
   {
-    customerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    hallId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Hall',
-      required: true,
-    },
-    weddingDate: {
-      type: Date,
-      required: true,
-    },
-    session: {
-      type: String,
-      required: true,
-      enum: ['Morning', 'Evening'],
-    },
-    selectedPackages: {
-      type: [selectedPackageSchema],
-      required: true,
-      validate: {
-        validator: (v) => Array.isArray(v) && v.length > 0,
-        message: 'Phải chọn ít nhất một gói dịch vụ.',
-      },
-    },
-    totalPrice: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    restaurantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant', required: true },
+    hallId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hall', required: true },
+    bookingDate: { type: Date, required: true },
+    shift: { type: String, enum: ['MORNING', 'EVENING'], required: true },
+    services: [bookingServiceSchema],
+    customerNote: { type: String },
+    cancelReason: { type: String },
+    rejectReason: { type: String },
+    estimatedTotal: { type: Number, required: true },
+    depositRequired: { type: Number },
+    finalAmount: { type: Number },
     status: {
       type: String,
-      required: true,
-      enum: ['Pending approval', 'Confirmed', 'Pending payment', 'Canceled'],
-    },
-    paymentStatus: {
-      type: String,
-      required: true,
-      enum: ['Unpaid', 'Paid'],
+      enum: ['PENDING', 'COMPLETED', 'CANCELLED', 'REJECTED'],
+      default: 'PENDING',
     },
   },
   { timestamps: true }
