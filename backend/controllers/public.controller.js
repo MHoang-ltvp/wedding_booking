@@ -1,8 +1,6 @@
 /**
  * Public Controller - Thành viên 4 (Tdung)
- * API hiển thị ra ngoài cho Guest/Customer: tìm kiếm, chi tiết nhà hàng, sảnh, dịch vụ, kiểm tra lịch trống
- *
- * Không cần auth - public.
+
  */
 
 const mongoose = require('mongoose');
@@ -11,16 +9,6 @@ const { Restaurant, Hall, ServicePackage, Booking } = require('../models');
 /**
  * GET /api/public/restaurants
  * Tìm kiếm và liệt kê nhà hàng với bộ lọc và phân trang
- *
- * Query Parameters:
- * - page (default: 1)
- * - limit (default: 10, max: 100)
- * - search (tìm theo tên nhà hàng)
- * - address (tìm theo địa chỉ)
- * - minCapacity (sức chứa tối thiểu)
- * - maxCapacity (sức chứa tối đa)
- * - minPrice (giá tối thiểu)
- * - maxPrice (giá tối đa)
  */
 const getRestaurants = async (req, res) => {
   try {
@@ -35,12 +23,10 @@ const getRestaurants = async (req, res) => {
       maxPrice,
     } = req.query;
 
-    // Validate pagination
     const pageNum = Math.max(1, parseInt(page) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10));
     const skip = (pageNum - 1) * limitNum;
 
-    // Build filter
     const filter = { status: 'ACTIVE' };
 
     if (search) {
@@ -51,22 +37,20 @@ const getRestaurants = async (req, res) => {
       filter.address = { $regex: address, $options: 'i' };
     }
 
-    // Get restaurants matching basic filters
     const restaurants = await Restaurant.find(filter)
       .skip(skip)
       .limit(limitNum)
       .lean();
 
-    // Enrich each restaurant with hall and service info
     const enrichedRestaurants = await Promise.all(
       restaurants.map(async (restaurant) => {
-        // Get halls for this restaurant
+       
         const halls = await Hall.find({
           restaurantId: restaurant._id,
           isDeleted: false,
         }).lean();
 
-        // Filter halls by capacity and price if provided
+     
         let filteredHalls = halls;
         if (minCapacity || maxCapacity || minPrice || maxPrice) {
           filteredHalls = halls.filter((hall) => {
@@ -78,13 +62,13 @@ const getRestaurants = async (req, res) => {
           });
         }
 
-        // Get services for this restaurant
+     
         const services = await ServicePackage.find({
           restaurantId: restaurant._id,
           isDeleted: false,
         }).lean();
 
-        // Calculate min/max prices and capacities
+       
         const prices = filteredHalls.map((h) => h.basePrice);
         const capacities = filteredHalls.map((h) => h.capacity);
 
@@ -100,13 +84,13 @@ const getRestaurants = async (req, res) => {
       })
     );
 
-    // Filter out restaurants with no matching halls (if filters were applied)
+  
     const finalRestaurants =
       minCapacity || maxCapacity || minPrice || maxPrice
         ? enrichedRestaurants.filter((r) => r.hallCount > 0)
         : enrichedRestaurants;
 
-    // Get total count for pagination
+   
     const totalCount = await Restaurant.countDocuments(filter);
 
     res.json({
@@ -137,7 +121,7 @@ const getRestaurantById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Validate ObjectId
+  
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -145,7 +129,7 @@ const getRestaurantById = async (req, res) => {
       });
     }
 
-    // Find restaurant
+
     const restaurant = await Restaurant.findOne({
       _id: id,
       status: 'ACTIVE',
@@ -158,7 +142,7 @@ const getRestaurantById = async (req, res) => {
       });
     }
 
-    // Get halls
+
     const halls = await Hall.find({
       restaurantId: id,
       isDeleted: false,
@@ -166,7 +150,7 @@ const getRestaurantById = async (req, res) => {
       .select('_id name capacity area basePrice description images status')
       .lean();
 
-    // Get services
+  
     const services = await ServicePackage.find({
       restaurantId: id,
       isDeleted: false,
@@ -195,19 +179,12 @@ const getRestaurantById = async (req, res) => {
 /**
  * GET /api/public/restaurants/:id/halls
  * Danh sách sảnh của một nhà hàng
- *
- * Query Parameters:
- * - minCapacity
- * - maxCapacity
- * - minPrice
- * - maxPrice
  */
 const getHallsByRestaurant = async (req, res) => {
   try {
     const { id } = req.params;
     const { minCapacity, maxCapacity, minPrice, maxPrice } = req.query;
 
-    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -215,7 +192,7 @@ const getHallsByRestaurant = async (req, res) => {
       });
     }
 
-    // Check if restaurant exists and is ACTIVE
+ 
     const restaurant = await Restaurant.findOne({
       _id: id,
       status: 'ACTIVE',
@@ -228,16 +205,16 @@ const getHallsByRestaurant = async (req, res) => {
       });
     }
 
-    // Build filter
+   
     const filter = {
       restaurantId: id,
       isDeleted: false,
     };
 
-    // Get halls
+    
     let halls = await Hall.find(filter).lean();
 
-    // Apply filters
+   
     if (minCapacity || maxCapacity || minPrice || maxPrice) {
       halls = halls.filter((hall) => {
         if (minCapacity && hall.capacity < parseInt(minCapacity)) return false;
@@ -265,24 +242,19 @@ const getHallsByRestaurant = async (req, res) => {
 /**
  * GET /api/public/restaurants/:id/services
  * Danh sách dịch vụ (menu & trang trí) của một nhà hàng
- *
- * Query Parameters:
- * - type (FOOD hoặc DECORATION, optional)
  */
 const getServicesByRestaurant = async (req, res) => {
   try {
     const { id } = req.params;
     const { type } = req.query;
 
-    // Validate ObjectId
+   
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'ID nhà hàng không hợp lệ',
       });
     }
-
-    // Check if restaurant exists and is ACTIVE
     const restaurant = await Restaurant.findOne({
       _id: id,
       status: 'ACTIVE',
@@ -295,7 +267,7 @@ const getServicesByRestaurant = async (req, res) => {
       });
     }
 
-    // Build filter
+   
     const filter = {
       restaurantId: id,
       isDeleted: false,
@@ -305,10 +277,10 @@ const getServicesByRestaurant = async (req, res) => {
       filter.type = type.toUpperCase();
     }
 
-    // Get services
+  
     const services = await ServicePackage.find(filter).lean();
 
-    // Group by type if no specific type filter
+ 
     if (!type) {
       const grouped = {
         food: services.filter((s) => s.type === 'FOOD'),
@@ -338,22 +310,11 @@ const getServicesByRestaurant = async (req, res) => {
 /**
  * GET /api/public/halls/:id/availability?date=YYYY-MM-DD
  * Kiểm tra lịch trống của sảnh theo ngày
- *
- * Query Parameters:
- * - date (required, format: YYYY-MM-DD)
- *
- * Response:
- * {
- *   MORNING: { available: true/false, bookingId: null/id },
- *   EVENING: { available: true/false, bookingId: null/id }
- * }
  */
 const getHallAvailability = async (req, res) => {
   try {
     const { id } = req.params;
     const { date } = req.query;
-
-    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -361,7 +322,7 @@ const getHallAvailability = async (req, res) => {
       });
     }
 
-    // Validate date format (YYYY-MM-DD)
+ 
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({
         success: false,
@@ -369,7 +330,7 @@ const getHallAvailability = async (req, res) => {
       });
     }
 
-    // Check if hall exists
+    
     const hall = await Hall.findById(id).lean();
     if (!hall) {
       return res.status(404).json({
@@ -378,12 +339,12 @@ const getHallAvailability = async (req, res) => {
       });
     }
 
-    // Parse date and create date range for the day
+  
     const [year, month, day] = date.split('-').map(Number);
     const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
     const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 
-    // Query bookings for this hall on this date with confirmed status
+
     const bookings = await Booking.find({
       hallId: id,
       bookingDate: {
@@ -395,7 +356,7 @@ const getHallAvailability = async (req, res) => {
       .select('_id shift')
       .lean();
 
-    // Create availability map
+   
     const bookedShifts = new Set(bookings.map((b) => b.shift));
     const availability = {
       MORNING: {
