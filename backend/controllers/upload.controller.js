@@ -1,24 +1,57 @@
-/**
- * Upload Controller - Thành viên 6 (Minh Công)
- * Cloudinary: upload ảnh, xóa ảnh bằng public_id
- *
- * Viết logic vào các hàm dưới đây. Route gọi qua integration.routes.js (hoặc upload.routes nếu tách).
- * Tạm thời chưa gắn middleware.
- */
+const cloudinary = require("cloudinary").v2;
+const multer = require("multer");
+const path = require("path");
+// cấu hình cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// cấu hình multer lưu file tạm
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
 
 // POST /api/upload/image - Nhận file, đẩy lên Cloudinary, trả về url và public_id
 const uploadImage = async (req, res) => {
-  // TODO: Dùng multer hoặc form-data. Gọi Cloudinary API upload. Trả { url, public_id }
-  res.json({ message: 'POST /api/upload/image - Viết logic tại đây (upload.controller.uploadImage)' });
+  try {
+    const result = await cloudinary.uploader.upload(req.file.path);
+
+    res.json({
+      url: result.secure_url,
+      public_id: result.public_id,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
-// DELETE /api/upload/image - Xóa ảnh trên Cloudinary bằng public_id (body hoặc query)
+// DELETE /api/upload/image
 const deleteImage = async (req, res) => {
-  // TODO: Lấy public_id từ req.body hoặc req.query. Gọi Cloudinary destroy. Trả success
-  res.json({ message: 'DELETE /api/upload/image - Viết logic tại đây (upload.controller.deleteImage)' });
+  try {
+    const { public_id } = req.body;
+
+    const result = await cloudinary.uploader.destroy(public_id);
+
+    res.json({
+      message: "Image deleted successfully",
+      result,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 module.exports = {
   uploadImage,
   deleteImage,
+  upload,
 };
