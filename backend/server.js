@@ -1,10 +1,8 @@
 // Toàn bộ code Node.js/Express
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const { connectDB } = require('./config/database');
-const hallRoutes = require('./routes/vendor/halls');
-const serviceRoutes = require('./routes/vendor/services');
+const express = require("express");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const { connectDB } = require("./config/database");
 
 dotenv.config();
 
@@ -14,13 +12,22 @@ const PORT = process.env.PORT || 9999;
 app.use(cors());
 app.use(express.json());
 
-const routes = require('./routes');
-app.use('/api', routes);
+const routes = require("./routes");
+app.use("/api", routes);
 
 connectDB();
 
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true, message: 'Backend đang chạy' });
+// Root route: tránh "Cannot GET /" khi mở backend trên trình duyệt
+app.get("/", (req, res) => {
+  res.json({
+    ok: true,
+    message: "Wedding Booking Backend",
+    health: "/api/health",
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, message: "Backend đang chạy" });
 });
 
 app.listen(PORT, () => {
