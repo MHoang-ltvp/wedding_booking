@@ -1,38 +1,39 @@
 /**
- * Integration Routes - Thành viên 6 (Minh Công)
- * Upload (Cloudinary) + Payment + Statistics.
- * Tạm thời chưa gắn middleware.
+ * Integration Routes - Upload + Statistics (thống kê vendor/admin).
  */
 
-const express = require("express");
-const uploadController = require("../controllers/upload.controller");
-const paymentController = require("../controllers/payment.controller");
+const express = require('express');
+const uploadController = require('../controllers/upload.controller');
+const statsController = require('../controllers/payment.controller');
+const authMiddleware = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware');
 
 // Router cho /api/upload
 const uploadRouter = express.Router();
 uploadRouter.post(
-  "/image",
-  uploadController.upload.single("image"), // 👈 thêm dòng này
+  '/image',
+  uploadController.upload.single('image'),
   uploadController.uploadImage,
 );
-uploadRouter.delete("/image", uploadController.deleteImage);
+uploadRouter.post(
+  '/images',
+  uploadController.upload.array('images', uploadController.MAX_IMAGES_PER_REQUEST),
+  uploadController.uploadImages,
+);
+uploadRouter.delete('/image', uploadController.deleteImage);
 
-// Router cho /api/payments
-const paymentRouter = express.Router();
-paymentRouter.post("/create-url", paymentController.createPaymentUrl);
-paymentRouter.post("/webhook", paymentController.webhook);
-
-// Router cho /api/vendor/stats (mount tại /api/vendor, route /stats)
+// GET /api/vendor/stats
 const vendorStatsRouter = express.Router();
-vendorStatsRouter.get("/stats", paymentController.getVendorStats);
+vendorStatsRouter.use(authMiddleware, roleMiddleware(['VENDOR']));
+vendorStatsRouter.get('/stats', statsController.getVendorStats);
 
-// Router cho /api/admin/stats (mount tại /api/admin, route /stats)
+// GET /api/admin/stats
 const adminStatsRouter = express.Router();
-adminStatsRouter.get("/stats", paymentController.getAdminStats);
+adminStatsRouter.use(authMiddleware, roleMiddleware(['ADMIN']));
+adminStatsRouter.get('/stats', statsController.getAdminStats);
 
 module.exports = {
   uploadRouter,
-  paymentRouter,
   vendorStatsRouter,
   adminStatsRouter,
 };

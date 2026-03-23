@@ -1,39 +1,117 @@
 /**
- * Payment & Statistics Controller - Thành viên 6 (Minh Công / Triệu Hoàng)
- * Payment: tạo link thanh toán mock, webhook giả lập -> cập nhật Booking + Transaction.
- * Stats: Vendor stats, Admin stats.
- *
- * Viết logic vào các hàm dưới đây. Route gọi qua integration.routes.js.
- * Tạm thời chưa gắn middleware.
+ * Thống kê vendor/admin. Doanh thu cọc = tổng depositRequired các booking có depositPaid.
  */
 
-// POST /api/payments/create-url - Tạo link thanh toán Mock cho số tiền cọc
-const createPaymentUrl = async (req, res) => {
-  // TODO: Body bookingId, amount. Trả về URL giả lập (hoặc mã giao dịch) để FE redirect
-  res.json({ message: 'POST /api/payments/create-url - Viết logic tại đây (payment.controller.createPaymentUrl)' });
-};
+const User = require('../models/User');
+const Restaurant = require('../models/Restaurant');
+const Booking = require('../models/Booking');
 
-// POST /api/payments/webhook - Giả lập thanh toán thành công -> cập nhật Booking (DEPOSITED), tạo Transaction
-const webhook = async (req, res) => {
-  // TODO: Nhận bookingId/transactionCode. Cập nhật Booking trạng thái, tạo Transaction status PAID
-  res.json({ message: 'POST /api/payments/webhook - Viết logic tại đây (payment.controller.webhook)' });
-};
-
-// GET /api/vendor/stats - Tổng booking, doanh thu cọc, top sảnh/dịch vụ
+// GET /api/vendor/stats
 const getVendorStats = async (req, res) => {
-  // TODO: Lấy restaurantId từ vendor. Aggregate Bookings, Transactions. Trả số liệu
-  res.json({ message: 'GET /api/vendor/stats - Viết logic tại đây (payment.controller.getVendorStats)' });
+  try {
+    const vendorId = req.user._id;
+    const restaurants = await Restaurant.find({ vendorId }).select('_id name').lean();
+    const restaurantIds = restaurants.map((r) => r._id);
+
+    if (restaurantIds.length === 0) {
+      return res.json({
+        success: true,
+        stats: {
+          restaurantCount: 0,
+          bookingTotal: 0,
+          bookingsByStatus: {},
+          depositRevenue: 0,
+        },
+        restaurants: [],
+      });
+    }
+
+    const bookings = await Booking.find({ restaurantId: { $in: restaurantIds } })
+      .select('_id status restaurantId')
+      .lean();
+    const bookingIds = bookings.map((b) => b._id);
+
+    const bookingsByStatus = {};
+    for (const b of bookings) {
+      bookingsByStatus[b.status] = (bookingsByStatus[b.status] || 0) + 1;
+    }
+
+    const paidAgg = await Booking.aggregate([
+      {
+        $match: {
+          _id: { $in: bookingIds },
+          depositPaid: true,
+          depositRequired: { $gt: 0 },
+        },
+      },
+      { $group: { _id: null, total: { $sum: '$depositRequired' } } },
+    ]);
+    const depositRevenue = paidAgg[0]?.total || 0;
+
+    return res.json({
+      success: true,
+      stats: {
+        restaurantCount: restaurants.length,
+        bookingTotal: bookings.length,
+        bookingsByStatus,
+        depositRevenue,
+      },
+      restaurants,
+    });
+  } catch (err) {
+    console.error('payment.getVendorStats:', err);
+    return res.status(500).json({ success: false, message: 'Lỗi thống kê vendor.' });
+  }
 };
 
-// GET /api/admin/stats - Tổng User, Vendor, Booking, tỉ lệ chuyển đổi
+// GET /api/admin/stats
 const getAdminStats = async (req, res) => {
-  // TODO: Đếm User (theo role), Restaurant, Booking (theo status). Tính tỉ lệ
-  res.json({ message: 'GET /api/admin/stats - Viết logic tại đây (payment.controller.getAdminStats)' });
+  try {
+    const [
+      usersTotal,
+      admins,
+      vendors,
+      customers,
+      restaurantsTotal,
+      pendingRestaurants,
+      bookingsTotal,
+      bookingAgg,
+    ] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ role: 'ADMIN' }),
+      User.countDocuments({ role: 'VENDOR' }),
+      User.countDocuments({ role: 'CUSTOMER' }),
+      Restaurant.countDocuments(),
+      Restaurant.countDocuments({ approvalStatus: 'PENDING' }),
+      Booking.countDocuments(),
+      Booking.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+    ]);
+
+    const bookingsByStatus = {};
+    for (const row of bookingAgg) {
+      bookingsByStatus[row._id] = row.count;
+    }
+
+    return res.json({
+      success: true,
+      stats: {
+        usersTotal,
+        admins,
+        vendors,
+        customers,
+        restaurantsTotal,
+        pendingRestaurantApprovals: pendingRestaurants,
+        bookingsTotal,
+        bookingsByStatus,
+      },
+    });
+  } catch (err) {
+    console.error('payment.getAdminStats:', err);
+    return res.status(500).json({ success: false, message: 'Lỗi thống kê admin.' });
+  }
 };
 
 module.exports = {
-  createPaymentUrl,
-  webhook,
   getVendorStats,
   getAdminStats,
 };

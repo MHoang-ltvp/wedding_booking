@@ -23,6 +23,9 @@ const bookingSchema = new mongoose.Schema(
     rejectReason: { type: String },
     estimatedTotal: { type: Number, required: true },
     depositRequired: { type: Number },
+    /** Khách bấm “Thanh toán” — không qua cổng thanh toán riêng */
+    depositPaid: { type: Boolean, default: false },
+    paidAt: { type: Date },
     finalAmount: { type: Number },
     status: {
       type: String,

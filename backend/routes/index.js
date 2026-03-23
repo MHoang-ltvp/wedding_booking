@@ -17,7 +17,6 @@ const {
 } = require('./booking.routes');
 const {
   uploadRouter,
-  paymentRouter,
   vendorStatsRouter,
   adminStatsRouter,
 } = require('./integration.routes');
@@ -49,8 +48,7 @@ router.use('/vendor', vendorStatsRouter); // GET /api/vendor/stats
 // ---- Customer bookings ----
 router.use('/bookings', customerBookingRouter);
 
-// ---- Upload & Payment ----
+// ---- Upload ----
 router.use('/upload', uploadRouter);
-router.use('/payments', paymentRouter);
 
 module.exports = router;

@@ -62,7 +62,7 @@ const register = async (req, res) => {
     });
 
     if (role === "VENDOR") {
-      // 1 vendor -> 1 restaurant profile. Admin sẽ duyệt theo approvalStatus.
+      // Tạo một hồ sơ mặc định; vendor có thể thêm nhà hàng khác qua API.
       await Restaurant.create({
         vendorId: user._id,
         name: "Chưa cập nhật",

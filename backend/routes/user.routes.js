@@ -6,14 +6,17 @@
 
 const express = require('express');
 const userController = require('../controllers/user.controller');
+const authMiddleware = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware');
 
 // Router cho /api/users (profile: me)
 const userRouter = express.Router();
-userRouter.get('/me', userController.getMe);
-userRouter.put('/me', userController.updateMe);
+userRouter.get('/me', authMiddleware, userController.getMe);
+userRouter.put('/me', authMiddleware, userController.updateMe);
 
 // Router cho /api/admin/users (quản lý user)
 const adminUserRouter = express.Router();
+adminUserRouter.use(authMiddleware, roleMiddleware(['ADMIN']));
 adminUserRouter.get('/', userController.getAdminUsers);
 adminUserRouter.put('/:id/status', userController.updateUserStatus);
 

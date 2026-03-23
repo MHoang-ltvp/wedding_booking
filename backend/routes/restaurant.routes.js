@@ -12,12 +12,17 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 const vendorRestaurantRouter = express.Router();
 vendorRestaurantRouter.use(authMiddleware, roleMiddleware(['VENDOR']));
 vendorRestaurantRouter.get('/me', restaurantController.getMyRestaurant);
+vendorRestaurantRouter.get('/:id', restaurantController.getById);
 vendorRestaurantRouter.post('/', restaurantController.create);
 vendorRestaurantRouter.put('/:id', restaurantController.update);
 
 // Router cho /api/admin/restaurants
 const adminRestaurantRouter = express.Router();
 adminRestaurantRouter.use(authMiddleware, roleMiddleware(['ADMIN']));
+adminRestaurantRouter.put(
+  '/:id/approval',
+  restaurantController.setAdminRestaurantApproval,
+);
 adminRestaurantRouter.get('/', restaurantController.getAdminRestaurants);
 
 module.exports = { vendorRestaurantRouter, adminRestaurantRouter };

@@ -5,10 +5,11 @@ frontend/node_modules/
 # Context cho AI (không commit)
 .context-ai.md
 
-# Environment
+# Environment (không commit bí mật)
 .env
 .env.local
 *.env
+!*.env.example
 
 # Build & cache
 frontend/dist/

@@ -1,10 +1,14 @@
 /**
  * Restaurant Controller - Thành viên 2 (VHoang)
  * Vendor - Restaurant Management + Admin - Approval (danh sách nhà hàng)
+ *
+ * Nghiệp vụ: một VENDOR có thể có nhiều Restaurant (vendorId không unique).
+ * GET /me trả về mảng `restaurants`.
  */
 
 const mongoose = require("mongoose");
 const Restaurant = require("../models/Restaurant");
+const Hall = require("../models/Hall");
 
 const isNonEmptyString = (value) =>
   typeof value === "string" && value.trim().length > 0;
@@ -27,15 +31,6 @@ const create = async (req, res) => {
       return res
         .status(401)
         .json({ success: false, message: "Vui lòng đăng nhập." });
-
-    const existing = await Restaurant.findOne({ vendorId });
-    if (existing) {
-      return res.status(409).json({
-        success: false,
-        message: "Vendor đã có hồ sơ nhà hàng.",
-        restaurant: existing,
-      });
-    }
 
     const { name, address, description, contact, images, status } =
       req.body || {};
@@ -63,11 +58,6 @@ const create = async (req, res) => {
       restaurant,
     });
   } catch (err) {
-    if (err?.code === 11000) {
-      return res
-        .status(409)
-        .json({ success: false, message: "Vendor đã có hồ sơ nhà hàng." });
-    }
     console.error("restaurant.create error:", err);
     return res
       .status(500)
@@ -179,7 +169,7 @@ const update = async (req, res) => {
   }
 };
 
-// GET /api/vendor/restaurants/me - Lấy thông tin nhà hàng của Vendor đang đăng nhập
+// GET /api/vendor/restaurants/me - Danh sách nhà hàng của Vendor đang đăng nhập
 const getMyRestaurant = async (req, res) => {
   try {
     const vendorId = req.user?._id;
@@ -188,13 +178,35 @@ const getMyRestaurant = async (req, res) => {
         .status(401)
         .json({ success: false, message: "Vui lòng đăng nhập." });
 
-    const restaurant = await Restaurant.findOne({ vendorId });
-    if (!restaurant)
-      return res
-        .status(404)
-        .json({ success: false, message: "Chưa có hồ sơ nhà hàng." });
+    const restaurants = await Restaurant.find({ vendorId })
+      .sort({
+        createdAt: -1,
+      })
+      .lean();
 
-    return res.json({ success: true, restaurant });
+    const ids = restaurants.map((r) => r._id);
+    const hallCounts =
+      ids.length === 0
+        ? []
+        : await Hall.aggregate([
+            {
+              $match: {
+                restaurantId: { $in: ids },
+                isDeleted: false,
+              },
+            },
+            { $group: { _id: "$restaurantId", count: { $sum: 1 } } },
+          ]);
+    const countMap = Object.fromEntries(
+      hallCounts.map((c) => [String(c._id), c.count]),
+    );
+
+    const restaurantsWithCounts = restaurants.map((r) => ({
+      ...r,
+      hallCount: countMap[String(r._id)] || 0,
+    }));
+
+    return res.json({ success: true, restaurants: restaurantsWithCounts });
   } catch (err) {
     console.error("restaurant.getMyRestaurant error:", err);
     return res
@@ -281,9 +293,87 @@ const getAdminRestaurants = async (req, res) => {
   }
 };
 
+// PUT /api/admin/restaurants/:id/approval — Duyệt / từ chối hồ sơ nhà hàng
+const setAdminRestaurantApproval = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { approvalStatus } = req.body || {};
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "ID nhà hàng không hợp lệ." });
+    }
+    if (!["PENDING", "APPROVED", "REJECTED"].includes(approvalStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "approvalStatus phải là PENDING, APPROVED hoặc REJECTED.",
+      });
+    }
+
+    const restaurant = await Restaurant.findByIdAndUpdate(
+      id,
+      { approvalStatus },
+      { new: true },
+    ).populate("vendorId", "email fullName phone role");
+
+    if (!restaurant) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy nhà hàng." });
+    }
+
+    return res.json({
+      success: true,
+      message: "Đã cập nhật trạng thái duyệt.",
+      restaurant,
+    });
+  } catch (err) {
+    console.error("restaurant.setAdminRestaurantApproval error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi cập nhật duyệt nhà hàng." });
+  }
+};
+
+// GET /api/vendor/restaurants/:id — Chi tiết một nhà hàng (của vendor)
+const getById = async (req, res) => {
+  try {
+    const vendorId = req.user?._id;
+    if (!vendorId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập.' });
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'ID nhà hàng không hợp lệ.' });
+    }
+
+    const restaurant = await Restaurant.findOne({ _id: id, vendorId }).lean();
+    if (!restaurant) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy nhà hàng.' });
+    }
+
+    const hallCount = await Hall.countDocuments({
+      restaurantId: id,
+      isDeleted: false,
+    });
+
+    return res.json({
+      success: true,
+      restaurant: { ...restaurant, hallCount },
+    });
+  } catch (err) {
+    console.error('restaurant.getById:', err);
+    return res.status(500).json({ success: false, message: 'Lỗi lấy nhà hàng.' });
+  }
+};
+
 module.exports = {
   create,
   update,
   getMyRestaurant,
+  getById,
   getAdminRestaurants,
+  setAdminRestaurantApproval,
 };

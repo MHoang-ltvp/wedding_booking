@@ -39,6 +39,46 @@ GET http://localhost:9999/api/public/halls/[ID_SANH]/availability?date=2026-10-2
 const mongoose = require('mongoose');
 const { Restaurant, Hall, ServicePackage, Booking } = require('../models');
 
+/** Thêm coverImage (URL ảnh đầu) để client hiển thị không cần parse images[] */
+function hallWithCover(h) {
+  if (!h) return h;
+  const imgs = Array.isArray(h.images) ? h.images : [];
+  return {
+    ...h,
+    coverImage: imgs[0]?.url || null,
+  };
+}
+
+function serviceWithCover(s) {
+  if (!s) return s;
+  const imgs = Array.isArray(s.images) ? s.images : [];
+  return {
+    ...s,
+    coverImage: imgs[0]?.url || null,
+  };
+}
+
+/** Ngày theo giờ local (server), YYYY-MM-DD */
+function ymdLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function todayYmdLocal() {
+  return ymdLocal(new Date());
+}
+
+function parseYmdLocal(ymd) {
+  if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
+  const [y, mo, d] = ymd.split('-').map(Number);
+  return new Date(y, mo - 1, d, 0, 0, 0, 0);
+}
+
+/** Trạng thái booking chiếm slot — khớp booking.controller create */
+const BOOKING_STATUSES_BLOCKING = { $nin: ['CANCELLED', 'REJECTED'] };
+
 /**
  * GET /api/public/restaurants
  * Tìm kiếm và liệt kê nhà hàng với bộ lọc và phân trang
@@ -176,20 +216,23 @@ const getRestaurantById = async (req, res) => {
     }
 
 
-    const halls = await Hall.find({
+    const hallsRaw = await Hall.find({
       restaurantId: id,
       isDeleted: false,
     })
       .select('_id name capacity area basePrice description images status')
       .lean();
 
-  
-    const services = await ServicePackage.find({
+    const halls = hallsRaw.map(hallWithCover);
+
+    const servicesRaw = await ServicePackage.find({
       restaurantId: id,
       isDeleted: false,
     })
       .select('_id name type unit price items description images')
       .lean();
+
+    const services = servicesRaw.map(serviceWithCover);
 
     res.json({
       success: true,
@@ -258,12 +301,82 @@ const getHallsByRestaurant = async (req, res) => {
       });
     }
 
+    const data = halls.map(hallWithCover);
+
     res.json({
       success: true,
-      data: halls,
+      data,
     });
   } catch (error) {
     console.error('Error in getHallsByRestaurant:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy danh sách sảnh',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * GET /api/public/halls?page=1&limit=24
+ * Danh sách sảnh (nhà hàng ACTIVE, sảnh còn hoạt động) — dùng trang chủ / khám phá nhanh.
+ */
+const getAllPublicHalls = async (req, res) => {
+  try {
+    const { limit = 24, page = 1 } = req.query;
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 24));
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const skip = (pageNum - 1) * limitNum;
+
+    const activeIds = await Restaurant.find({ status: 'ACTIVE' }).distinct('_id');
+    if (!activeIds.length) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: { page: pageNum, limit: limitNum, total: 0, pages: 0 },
+      });
+    }
+
+    const filter = {
+      restaurantId: { $in: activeIds },
+      isDeleted: false,
+      status: 'AVAILABLE',
+    };
+
+    const total = await Hall.countDocuments(filter);
+
+    const halls = await Hall.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate('restaurantId', 'name address status')
+      .lean();
+
+    const data = halls
+      .filter((h) => h.restaurantId && h.restaurantId.status === 'ACTIVE')
+      .map((h) => {
+        const r = h.restaurantId;
+        const flat = {
+          ...hallWithCover(h),
+          restaurantId: r._id,
+          restaurantName: r.name || '',
+          restaurantAddress: r.address || '',
+        };
+        return flat;
+      });
+
+    res.json({
+      success: true,
+      data,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum) || 0,
+      },
+    });
+  } catch (error) {
+    console.error('Error in getAllPublicHalls:', error);
     res.status(500).json({
       success: false,
       message: 'Lỗi khi lấy danh sách sảnh',
@@ -310,10 +423,8 @@ const getServicesByRestaurant = async (req, res) => {
       filter.type = type.toUpperCase();
     }
 
-  
     const services = await ServicePackage.find(filter).lean();
 
- 
     if (!type) {
       const grouped = {
         food: services.filter((s) => s.type === 'FOOD'),
@@ -365,14 +476,13 @@ const getHallAvailability = async (req, res) => {
 
     
     const hall = await Hall.findById(id).lean();
-    if (!hall) {
+    if (!hall || hall.isDeleted) {
       return res.status(404).json({
         success: false,
         message: 'Sảnh không tìm thấy',
       });
     }
 
-  
     const [year, month, day] = date.split('-').map(Number);
     const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
     const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
@@ -384,20 +494,21 @@ const getHallAvailability = async (req, res) => {
         $gte: startOfDay,
         $lte: endOfDay,
       },
-      status: { $in: ['PENDING', 'COMPLETED'] },
+      status: BOOKING_STATUSES_BLOCKING,
     })
       .select('_id shift')
       .lean();
 
    
+    const hallOk = hall.status === 'AVAILABLE' && !hall.isDeleted;
     const bookedShifts = new Set(bookings.map((b) => b.shift));
     const availability = {
       MORNING: {
-        available: !bookedShifts.has('MORNING'),
+        available: hallOk && !bookedShifts.has('MORNING'),
         bookingId: bookings.find((b) => b.shift === 'MORNING')?._id || null,
       },
       EVENING: {
-        available: !bookedShifts.has('EVENING'),
+        available: hallOk && !bookedShifts.has('EVENING'),
         bookingId: bookings.find((b) => b.shift === 'EVENING')?._id || null,
       },
     };
@@ -407,6 +518,7 @@ const getHallAvailability = async (req, res) => {
       data: {
         hallId: id,
         hallName: hall.name,
+        hallBookable: hallOk,
         date,
         availability,
       },
@@ -421,10 +533,109 @@ const getHallAvailability = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/public/halls/:id/availability-range?from=YYYY-MM-DD&days=14
+ * Lịch trống nhiều ngày (mặc định từ hôm nay, 14 ngày), mỗi ngày 2 ca — khớp logic đặt chỗ.
+ */
+const getHallAvailabilityRange = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { from: fromQ, days: daysQ } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID sảnh không hợp lệ',
+      });
+    }
+
+    const hall = await Hall.findById(id).lean();
+    if (!hall || hall.isDeleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sảnh không tìm thấy',
+      });
+    }
+
+    const days = Math.min(31, Math.max(1, parseInt(daysQ, 10) || 14));
+    const today = parseYmdLocal(todayYmdLocal());
+    let start = fromQ && parseYmdLocal(fromQ) ? parseYmdLocal(fromQ) : today;
+    if (start < today) start = today;
+
+    const fromStr = ymdLocal(start);
+    const endLast = new Date(start);
+    endLast.setDate(endLast.getDate() + days - 1);
+    const rangeEnd = new Date(
+      endLast.getFullYear(),
+      endLast.getMonth(),
+      endLast.getDate(),
+      23,
+      59,
+      59,
+      999,
+    );
+
+    const bookings = await Booking.find({
+      hallId: id,
+      bookingDate: { $gte: start, $lte: rangeEnd },
+      status: BOOKING_STATUSES_BLOCKING,
+    })
+      .select('bookingDate shift')
+      .lean();
+
+    const takenByDate = new Map();
+    for (const b of bookings) {
+      const key = ymdLocal(new Date(b.bookingDate));
+      if (!takenByDate.has(key)) takenByDate.set(key, new Set());
+      takenByDate.get(key).add(b.shift);
+    }
+
+    const hallOk = hall.status === 'AVAILABLE' && !hall.isDeleted;
+    const slots = [];
+    for (let i = 0; i < days; i += 1) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      const dateStr = ymdLocal(d);
+      const taken = takenByDate.get(dateStr) || new Set();
+      slots.push({
+        date: dateStr,
+        availability: {
+          MORNING: { available: hallOk && !taken.has('MORNING') },
+          EVENING: { available: hallOk && !taken.has('EVENING') },
+        },
+      });
+    }
+
+    const toStr = slots.length ? slots[slots.length - 1].date : fromStr;
+
+    res.json({
+      success: true,
+      data: {
+        hallId: id,
+        hallName: hall.name,
+        hallBookable: hallOk,
+        from: fromStr,
+        to: toStr,
+        days,
+        slots,
+      },
+    });
+  } catch (error) {
+    console.error('Error in getHallAvailabilityRange:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy lịch trống',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getRestaurants,
   getRestaurantById,
   getHallsByRestaurant,
+  getAllPublicHalls,
   getServicesByRestaurant,
   getHallAvailability,
+  getHallAvailabilityRange,
 };

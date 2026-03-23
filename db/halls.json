@@ -8,7 +8,8 @@
     "basePrice": 45000000,
     "description": "Sảnh lớn, view sân vườn.",
     "images": [
-      { "url": "https://example.com/hall1-1.jpg", "public_id": "h1-1" }
+      { "url": "https://picsum.photos/seed/hall-bachduong-1/800/500", "public_id": "" },
+      { "url": "https://picsum.photos/seed/hall-bachduong-2/800/500", "public_id": "" }
     ],
     "status": "AVAILABLE",
     "isDeleted": false
@@ -21,7 +22,9 @@
     "area": 700,
     "basePrice": 65000000,
     "description": "Sảnh VIP, sức chứa lớn.",
-    "images": [],
+    "images": [
+      { "url": "https://picsum.photos/seed/hall-kimcuong-1/800/500", "public_id": "" }
+    ],
     "status": "AVAILABLE",
     "isDeleted": false
   },
@@ -33,7 +36,9 @@
     "area": 280,
     "basePrice": 35000000,
     "description": "Sảnh tầng 2.",
-    "images": [],
+    "images": [
+      { "url": "https://picsum.photos/seed/hall-maivang-1/800/500", "public_id": "" }
+    ],
     "status": "AVAILABLE",
     "isDeleted": false
   },

@@ -1,35 +1,82 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 /**
- * Header tối giản: tên app (về trang chủ) + Đăng nhập hoặc (tên user + Đăng xuất).
- * Dùng Link để SPA không reload; trạng thái đăng nhập đọc từ localStorage (key: user).
+ * Header app (sau đăng nhập): logo + tên + đăng xuất.
  */
 function Header() {
-  const userJson = localStorage.getItem('user');
-  const user = userJson ? JSON.parse(userJson) : null;
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    window.location.href = '/'; // reload để toàn app cập nhật trạng thái
+    logout();
+    navigate('/login', { replace: true });
   };
 
   return (
-    <header style={{ borderBottom: '1px solid #eee', padding: '0.75rem 0' }}>
-      <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link to="/" style={{ textDecoration: 'none', color: 'inherit', fontWeight: 'bold' }}>
-          Wedding Booking
+    <header className="app-header">
+      <div className="container app-header__inner">
+        <Link to="/" className="app-header__brand">
+          <span className="app-header__brand-icon" aria-hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 2L4 6v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V6l-8-4z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          Vows &amp; Venues
         </Link>
-        <nav>
-          {user ? (
+        <nav className="app-header__nav">
+          {user && (
             <>
-              <span style={{ marginRight: '0.5rem' }}>{user.fullName || user.email}</span>
-              <button type="button" onClick={handleLogout}>
+              {user.role === 'VENDOR' && (
+                <Link
+                  to="/vendor/venues"
+                  style={{ marginRight: '0.75rem', fontSize: '0.9rem', color: '#38bdf8' }}
+                >
+                  Khu vendor
+                </Link>
+              )}
+              {user.role === 'CUSTOMER' && (
+                <>
+                  <Link
+                    to="/"
+                    style={{ marginRight: '0.65rem', fontSize: '0.9rem', color: '#7dd3fc' }}
+                  >
+                    Trang chủ
+                  </Link>
+                  <Link
+                    to="/my-bookings"
+                    style={{ marginRight: '0.65rem', fontSize: '0.9rem', color: '#7dd3fc' }}
+                  >
+                    Booking
+                  </Link>
+                  <Link
+                    to="/profile"
+                    style={{ marginRight: '0.75rem', fontSize: '0.9rem', color: '#7dd3fc' }}
+                  >
+                    Hồ sơ
+                  </Link>
+                </>
+              )}
+              {user.role === 'ADMIN' && (
+                <Link
+                  to="/admin/dashboard"
+                  style={{ marginRight: '0.75rem', fontSize: '0.9rem', color: '#a78bfa' }}
+                >
+                  Admin
+                </Link>
+              )}
+              <span className="app-header__user">
+                {user.fullName || user.email}
+              </span>
+              <button type="button" className="app-header__logout" onClick={handleLogout}>
                 Đăng xuất
               </button>
             </>
-          ) : (
-            <Link to="/login">Đăng nhập</Link>
           )}
         </nav>
       </div>

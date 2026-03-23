@@ -97,7 +97,7 @@ const create = async (req, res) => {
 | `GET /api/admin/restaurants`, `GET /api/admin/bookings`, `GET /api/admin/stats` | Admin | Xem nhà hàng, booking, thống kê |
 | `POST|PUT|GET /api/vendor/restaurants/*`, `.../halls`, `.../services`, `.../bookings`, `GET /api/vendor/stats` | Vendor | CRUD nhà hàng, sảnh, dịch vụ, duyệt booking, thống kê |
 | `POST|GET|PUT /api/bookings/*` (my-bookings, :id, cancel, resubmit) | Customer | Đặt tiệc, xem/hủy/sửa booking |
-| `POST|DELETE /api/upload/*`, `POST /api/payments/*` | Tùy nghiệp vụ | Upload ảnh, thanh toán (mock) |
+| `POST /api/upload/image` (1 file, field `image`), `POST /api/upload/images` (nhiều file, field `images`), `DELETE /api/upload/image` | Tùy nghiệp vụ | Upload Cloudinary; thanh toán: `POST /api/payments/*` |
 
 ---
 
@@ -130,8 +130,8 @@ Logic trong controller khi đó có thể dùng `req.user.id` (hoặc `req.user.
 ## 6. Models và tham chiếu
 
 - **User** – role: ADMIN | VENDOR | CUSTOMER; status: ACTIVE | LOCKED.
-- **Restaurant** – vendorId → User (Vendor). Một Vendor có một Restaurant (1-1).
-- **Hall, ServicePackage** – restaurantId → Restaurant.
+- **Restaurant** – vendorId → User (Vendor). Một Vendor có thể có **nhiều** Restaurant.
+- **Hall, ServicePackage** – restaurantId → Restaurant (gói/menu **theo từng nhà hàng**).
 - **Booking** – customerId → User, restaurantId → Restaurant, hallId → Hall; status: PENDING | COMPLETED | CANCELLED | REJECTED.
 - **Transaction** – bookingId → Booking, userId → User; type: DEPOSIT | FINAL_PAYMENT.
 

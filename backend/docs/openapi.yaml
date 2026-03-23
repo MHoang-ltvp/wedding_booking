@@ -1,0 +1,976 @@
+openapi: 3.0.3
+info:
+  title: Wedding Booking API
+  description: |
+    API đặt tiệc cưới — Auth, Public, Khách hàng (CUSTOMER), Nhà cung cấp (VENDOR), Quản trị (ADMIN).
+
+    **JWT:** Đăng nhập qua `POST /api/auth/login`, gửi header `Authorization: Bearer <token>`.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:9999
+    description: Máy cục bộ (mặc định PORT 9999)
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Public
+  - name: Users
+  - name: Admin — Users
+  - name: Admin — Restaurants
+  - name: Admin — Bookings
+  - name: Admin — Stats
+  - name: Vendor — Restaurants
+  - name: Vendor — Halls
+  - name: Vendor — Services
+  - name: Vendor — Bookings
+  - name: Vendor — Stats
+  - name: Customer — Bookings
+  - name: Upload
+
+paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Kiểm tra backend
+      description: Không cần xác thực.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthOk"
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Đăng ký
+      description: Đăng ký CUSTOMER hoặc VENDOR (VENDOR tự tạo hồ sơ nhà hàng mặc định).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Tạo tài khoản + JWT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSuccess"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Email đã tồn tại
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Đăng nhập
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: JWT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSuccess"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/public/restaurants:
+    get:
+      tags: [Public]
+      summary: Danh sách nhà hàng (tìm kiếm, lọc, phân trang)
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: search
+          in: query
+          schema: { type: string }
+          description: Lọc theo tên
+        - name: address
+          in: query
+          schema: { type: string }
+          description: Lọc theo địa chỉ (regex)
+        - name: minCapacity
+          in: query
+          schema: { type: integer }
+        - name: maxCapacity
+          in: query
+          schema: { type: integer }
+        - name: minPrice
+          in: query
+          schema: { type: number }
+        - name: maxPrice
+          in: query
+          schema: { type: number }
+      responses:
+        "200":
+          description: Danh sách đã enrich (sảnh min/max giá…)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      items: { type: array, items: { type: object } }
+                      total: { type: integer }
+                      page: { type: integer }
+                      limit: { type: integer }
+
+  /api/public/restaurants/{id}:
+    get:
+      tags: [Public]
+      summary: Chi tiết nhà hàng (kèm sảnh + gói dịch vụ)
+      parameters:
+        - $ref: "#/components/parameters/RestaurantId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { type: object }
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/public/restaurants/{id}/halls:
+    get:
+      tags: [Public]
+      summary: Sảnh của nhà hàng
+      parameters:
+        - $ref: "#/components/parameters/RestaurantId"
+        - name: minCapacity
+          in: query
+          schema: { type: integer }
+        - name: maxCapacity
+          in: query
+          schema: { type: integer }
+        - name: minPrice
+          in: query
+          schema: { type: number }
+        - name: maxPrice
+          in: query
+          schema: { type: number }
+      responses:
+        "200":
+          description: OK
+
+  /api/public/halls:
+    get:
+      tags: [Public]
+      summary: Tất cả sảnh (nhà hàng ACTIVE)
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 24 }
+      responses:
+        "200":
+          description: OK
+
+  /api/public/restaurants/{id}/services:
+    get:
+      tags: [Public]
+      summary: Gói dịch vụ của nhà hàng
+      parameters:
+        - $ref: "#/components/parameters/RestaurantId"
+        - name: type
+          in: query
+          schema:
+            type: string
+            example: FOOD
+          description: Ví dụ FOOD, DECORATION
+      responses:
+        "200":
+          description: OK
+
+  /api/public/halls/{id}/availability:
+    get:
+      tags: [Public]
+      summary: Lịch trống sảnh theo một ngày
+      parameters:
+        - $ref: "#/components/parameters/HallId"
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2026-10-20"
+      responses:
+        "200":
+          description: availability MORNING / EVENING + hallBookable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      hallBookable: { type: boolean }
+                      availability:
+                        type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/public/halls/{id}/availability-range:
+    get:
+      tags: [Public]
+      summary: Lịch trống nhiều ngày (mặc định 14 ngày, 2 ca)
+      parameters:
+        - $ref: "#/components/parameters/HallId"
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Ngày bắt đầu (YYYY-MM-DD), mặc định hôm nay
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 14
+            maximum: 31
+      responses:
+        "200":
+          description: slots[], hallBookable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      slots: { type: array }
+                      hallBookable: { type: boolean }
+
+  /api/users/me:
+    get:
+      tags: [Users]
+      summary: Thông tin tài khoản hiện tại
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: user (không có password)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      tags: [Users]
+      summary: Cập nhật profile (fullName, phone)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName: { type: string }
+                phone: { type: string }
+      responses:
+        "200":
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/admin/users:
+    get:
+      tags: [Admin — Users]
+      summary: Danh sách user (ADMIN)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [ADMIN, VENDOR, CUSTOMER]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, LOCKED]
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/users/{id}/status:
+    put:
+      tags: [Admin — Users]
+      summary: Khóa / mở tài khoản
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ObjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [ACTIVE, LOCKED]
+      responses:
+        "200":
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/admin/restaurants:
+    get:
+      tags: [Admin — Restaurants]
+      summary: Danh sách nhà hàng (ADMIN)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: approvalStatus
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+
+  /api/admin/restaurants/{id}/approval:
+    put:
+      tags: [Admin — Restaurants]
+      summary: Duyệt / từ chối nhà hàng
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ObjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approvalStatus]
+              properties:
+                approvalStatus:
+                  type: string
+                  enum: [APPROVED, REJECTED, PENDING]
+                note:
+                  type: string
+      responses:
+        "200":
+          description: OK
+
+  /api/admin/bookings:
+    get:
+      tags: [Admin — Bookings]
+      summary: Danh sách booking (ADMIN)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: restaurantId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+
+  /api/admin/stats:
+    get:
+      tags: [Admin — Stats]
+      summary: Thống kê tổng quan (ADMIN)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/vendor/restaurants/me:
+    get:
+      tags: [Vendor — Restaurants]
+      summary: Nhà hàng của vendor đăng nhập
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/vendor/restaurants/{id}:
+    get:
+      tags: [Vendor — Restaurants]
+      summary: Chi tiết nhà hàng (thuộc vendor)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ObjectId"
+      responses:
+        "200":
+          description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Vendor — Restaurants]
+      summary: Cập nhật nhà hàng
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ObjectId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: name, address, description, images, status…
+      responses:
+        "200":
+          description: OK
+
+  /api/vendor/restaurants:
+    post:
+      tags: [Vendor — Restaurants]
+      summary: Tạo nhà hàng mới
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                address: { type: string }
+                description: { type: string }
+      responses:
+        "201":
+          description: OK
+
+  /api/vendor/halls:
+    get:
+      tags: [Vendor — Halls]
+      summary: Danh sách sảnh theo nhà hàng
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: restaurantId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    post:
+      tags: [Vendor — Halls]
+      summary: Tạo sảnh
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HallCreateBody"
+      responses:
+        "201":
+          description: OK
+
+  /api/vendor/halls/{id}:
+    put:
+      tags: [Vendor — Halls]
+      summary: Cập nhật sảnh
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ObjectId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+    delete:
+      tags: [Vendor — Halls]
+      summary: Xóa mềm sảnh
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ObjectId"
+      responses:
+        "200":
+          description: OK
+
+  /api/vendor/halls/{id}/images:
+    post:
+      tags: [Vendor — Halls]
+      summary: Upload ảnh sảnh (multipart)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ObjectId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "200":
+          description: OK
+
+  /api/vendor/services:
+    get:
+      tags: [Vendor — Services]
+      summary: Danh sách gói dịch vụ
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: restaurantId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+    post:
+      tags: [Vendor — Services]
+      summary: Tạo gói dịch vụ
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                restaurantId: { type: string }
+                name: { type: string }
+                type: { type: string }
+                price: { type: number }
+      responses:
+        "201":
+          description: OK
+
+  /api/vendor/services/{id}:
+    put:
+      tags: [Vendor — Services]
+      summary: Cập nhật gói
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ObjectId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+    delete:
+      tags: [Vendor — Services]
+      summary: Xóa gói
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ObjectId"
+      responses:
+        "200":
+          description: OK
+
+  /api/vendor/bookings:
+    get:
+      tags: [Vendor — Bookings]
+      summary: Booking của nhà hàng vendor
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: restaurantId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: OK
+
+  /api/vendor/bookings/{id}/approve:
+    put:
+      tags: [Vendor — Bookings]
+      summary: Duyệt booking
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: OK
+
+  /api/vendor/bookings/{id}/reject:
+    put:
+      tags: [Vendor — Bookings]
+      summary: Từ chối booking
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: OK
+
+  /api/vendor/bookings/{id}/status:
+    put:
+      tags: [Vendor — Bookings]
+      summary: Cập nhật trạng thái sau khi duyệt (vd. hoàn tất…)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+      responses:
+        "200":
+          description: OK
+
+  /api/vendor/stats:
+    get:
+      tags: [Vendor — Stats]
+      summary: Thống kê vendor
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: OK
+
+  /api/bookings:
+    post:
+      tags: [Customer — Bookings]
+      summary: Tạo booking (CUSTOMER)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingCreateBody"
+      responses:
+        "201":
+          description: booking tạo
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Trùng lịch sảnh
+
+  /api/bookings/my-bookings:
+    get:
+      tags: [Customer — Bookings]
+      summary: Booking của tôi
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: OK
+
+  /api/bookings/{id}:
+    get:
+      tags: [Customer — Bookings]
+      summary: Chi tiết booking (của khách)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/bookings/{id}/cancel:
+    put:
+      tags: [Customer — Bookings]
+      summary: Hủy booking
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: OK
+
+  /api/bookings/{id}/resubmit:
+    put:
+      tags: [Customer — Bookings]
+      summary: Gửi lại sau khi bị từ chối
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: OK
+
+  /api/bookings/{id}/confirm-payment:
+    post:
+      tags: [Customer — Bookings]
+      summary: Xác nhận đã thanh toán cọc (mock / đơn giản hóa)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: OK
+
+  /api/upload/image:
+    post:
+      tags: [Upload]
+      summary: Upload một ảnh (multipart)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: URL Cloudinary
+    delete:
+      tags: [Upload]
+      summary: Xóa ảnh trên Cloudinary
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [public_id]
+              properties:
+                public_id:
+                  type: string
+                  description: public_id Cloudinary
+      responses:
+        "200":
+          description: OK
+
+  /api/upload/images:
+    post:
+      tags: [Upload]
+      summary: Upload nhiều ảnh
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "200":
+          description: OK
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token từ POST /api/auth/login
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, default: 1 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, default: 10 }
+    ObjectId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-fA-F0-9]{24}$"
+      description: MongoDB ObjectId
+    RestaurantId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID nhà hàng
+    HallId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID sảnh
+    BookingId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: ID booking
+
+  responses:
+    BadRequest:
+      description: Dữ liệu không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    Unauthorized:
+      description: Chưa đăng nhập / token sai
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    Forbidden:
+      description: Không đủ quyền (role)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    NotFound:
+      description: Không tìm thấy
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+
+  schemas:
+    HealthOk:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+        message: { type: string }
+
+    ErrorBody:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
+
+    RegisterBody:
+      type: object
+      required: [email, password, fullName, phone]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        fullName: { type: string }
+        phone: { type: string }
+        role:
+          type: string
+          enum: [CUSTOMER, VENDOR]
+          default: CUSTOMER
+
+    LoginBody:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string, format: password }
+
+    AuthSuccess:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+        token: { type: string }
+        user:
+          type: object
+          description: Không có password
+
+    HallCreateBody:
+      type: object
+      required: [restaurantId, name, capacity, basePrice]
+      properties:
+        restaurantId: { type: string }
+        name: { type: string }
+        capacity: { type: number }
+        area: { type: number }
+        basePrice: { type: number }
+        description: { type: string }
+        status:
+          type: string
+          enum: [AVAILABLE, MAINTENANCE, LOCKED]
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              url: { type: string }
+              public_id: { type: string }
+
+    BookingCreateBody:
+      type: object
+      required: [restaurantId, hallId, bookingDate, shift]
+      properties:
+        restaurantId: { type: string }
+        hallId: { type: string }
+        bookingDate:
+          type: string
+          format: date-time
+          description: ISO datetime
+        shift:
+          type: string
+          enum: [MORNING, EVENING]
+        customerNote: { type: string }
+        services:
+          type: array
+          items:
+            type: object
+            properties:
+              packageId: { type: string }
+              quantity: { type: integer, minimum: 1 }

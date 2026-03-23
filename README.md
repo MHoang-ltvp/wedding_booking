@@ -23,10 +23,13 @@ Backend mặc định chạy tại: http://localhost:9999
 ```bash
 cd frontend
 npm install
+# Copy .env.example thành .env và chỉnh VITE_API_URL nếu backend khác cổng
 npm run dev
 ```
 
 Frontend mặc định chạy tại: http://localhost:3000
+
+Biến `VITE_API_URL` (ví dụ `http://localhost:9999/api`) dùng cho axios — xem `frontend/.env.example`.
 
 ## Lưu ý
 

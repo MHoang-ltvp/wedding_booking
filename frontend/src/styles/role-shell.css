@@ -1,0 +1,95 @@
+/**
+ * Shell theo vai trò — dùng chung cấu trúc sidebar vendor-app.
+ */
+
+/* Badge vai trò */
+.role-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.55rem;
+  border-radius: 8px;
+  margin-bottom: 0.85rem;
+  width: fit-content;
+}
+
+.role-badge--customer {
+  background: rgba(34, 211, 238, 0.12);
+  color: #a5f3fc;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+}
+
+.role-badge--vendor {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+
+.role-badge--admin {
+  background: rgba(139, 92, 246, 0.14);
+  color: #ddd6fe;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+/* --- Khu khách (CUSTOMER) — accent cyan / teal --- */
+.customer-app {
+  background: radial-gradient(ellipse 120% 80% at 0% 0%, rgba(14, 165, 233, 0.08), transparent 50%),
+    #0a0e14;
+}
+
+.customer-app .vendor-sidebar {
+  border-right-color: rgba(34, 211, 238, 0.1);
+}
+
+.customer-app .vendor-sidebar__logo {
+  color: #22d3ee;
+}
+
+.customer-sidebar__avatar {
+  background: linear-gradient(135deg, #0e7490, #22d3ee) !important;
+}
+
+.customer-nav-link--active {
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.35), rgba(45, 212, 191, 0.12)) !important;
+  border: 1px solid rgba(34, 211, 238, 0.38) !important;
+  color: #fff !important;
+}
+
+.customer-main .customer-page {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+/* --- Vendor — accent xanh (mặc định đã có; tinh chỉnh) --- */
+.role-shell--vendor .vendor-sidebar {
+  border-right-color: rgba(59, 130, 246, 0.12);
+}
+
+.role-shell--vendor .vendor-sidebar__logo {
+  color: #3b82f6;
+}
+
+.role-shell--vendor .vendor-nav-link--active {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.35), rgba(56, 189, 248, 0.15));
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+/* --- Admin — accent tím --- */
+.role-shell--admin .vendor-sidebar {
+  border-right-color: rgba(139, 92, 246, 0.15);
+}
+
+.role-shell--admin .vendor-sidebar__logo {
+  color: #a78bfa;
+}
+
+.role-shell--admin .vendor-nav-link--active {
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.38), rgba(167, 139, 250, 0.12));
+  border: 1px solid rgba(139, 92, 246, 0.42);
+}
+
+.role-shell--admin .vendor-nav-link:hover {
+  background: rgba(139, 92, 246, 0.08);
+}

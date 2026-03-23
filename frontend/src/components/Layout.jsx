@@ -2,17 +2,16 @@ import { Outlet } from 'react-router-dom';
 import Header from './Header';
 
 /**
- * Layout chung: Header + Outlet (nội dung trang con theo route).
- * Outlet = nơi React Router render component tương ứng path (Home, Login, ...).
+ * Layout sau đăng nhập: Header + nội dung trang.
  */
 function Layout() {
   return (
-    <>
+    <div className="app-shell">
       <Header />
-      <main className="container" style={{ paddingTop: '1rem', paddingBottom: '1rem' }}>
+      <main className="app-main container">
         <Outlet />
       </main>
-    </>
+    </div>
   );
 }
 

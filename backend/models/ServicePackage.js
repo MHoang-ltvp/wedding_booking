@@ -1,11 +1,16 @@
 const mongoose = require('mongoose');
 
+/**
+ * Gói dịch vụ (menu, trang trí…) gắn với **một nhà hàng** (`restaurantId`).
+ * Mỗi nhà hàng có danh sách gói riêng; vendor quản lý qua quyền sở hữu Restaurant.
+ */
 const servicePackageSchema = new mongoose.Schema(
   {
     restaurantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Restaurant',
       required: true,
+      index: true,
     },
     name: { type: String, required: true },
     type: {
