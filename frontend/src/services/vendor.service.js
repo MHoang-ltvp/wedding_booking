@@ -15,6 +15,16 @@ export async function createRestaurant(body) {
   return data;
 }
 
+export async function updateRestaurant(restaurantId, body) {
+  const { data } = await api.put(`/vendor/restaurants/${restaurantId}`, body);
+  return data;
+}
+
+export async function submitRestaurantApproval(restaurantId) {
+  const { data } = await api.put(`/vendor/restaurants/${restaurantId}/submit-approval`);
+  return data;
+}
+
 export async function fetchHalls(restaurantId) {
   const { data } = await api.get('/vendor/halls', {
     params: { restaurantId },

@@ -45,3 +45,25 @@ export async function fetchHallAvailabilityRange(hallId, params) {
   });
   return data;
 }
+
+/** GET /api/public/locations/provinces */
+export async function fetchPublicProvinces() {
+  const { data } = await api.get('/public/locations/provinces');
+  return data;
+}
+
+/** GET /api/public/locations/districts?provinceCode= */
+export async function fetchPublicDistricts(provinceCode) {
+  const { data } = await api.get('/public/locations/districts', {
+    params: { provinceCode },
+  });
+  return data;
+}
+
+/** GET /api/public/locations/wards?districtCode= */
+export async function fetchPublicWards(districtCode) {
+  const { data } = await api.get('/public/locations/wards', {
+    params: { districtCode },
+  });
+  return data;
+}

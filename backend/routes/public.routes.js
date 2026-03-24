@@ -5,6 +5,7 @@
 
 const express = require('express');
 const publicController = require('../controllers/public.controller');
+const locationController = require('../controllers/location.controller');
 
 const router = express.Router();
 
@@ -28,5 +29,14 @@ router.get('/halls/:id/availability-range', publicController.getHallAvailability
 
 // GET /api/public/halls/:id/availability?date=YYYY-MM-DD
 router.get('/halls/:id/availability', publicController.getHallAvailability);
+
+// GET /api/public/locations/provinces
+router.get('/locations/provinces', locationController.getProvinces);
+
+// GET /api/public/locations/districts?provinceCode=
+router.get('/locations/districts', locationController.getDistrictsByProvince);
+
+// GET /api/public/locations/wards?districtCode=
+router.get('/locations/wards', locationController.getWardsByDistrict);
 
 module.exports = router;

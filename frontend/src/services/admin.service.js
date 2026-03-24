@@ -20,6 +20,12 @@ export async function setRestaurantApproval(restaurantId, approvalStatus) {
   return data;
 }
 
+/** GET /api/admin/restaurants/:id */
+export async function fetchAdminRestaurantById(restaurantId) {
+  const { data } = await api.get(`/admin/restaurants/${restaurantId}`);
+  return data;
+}
+
 /** GET /api/admin/users */
 export async function fetchAdminUsers(params) {
   const { data } = await api.get('/admin/users', { params });

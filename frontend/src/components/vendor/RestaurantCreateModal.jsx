@@ -1,6 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createRestaurant } from '../../services/vendor.service';
 import { uploadImages } from '../../services/upload.service';
+import {
+  fetchPublicDistricts,
+  fetchPublicProvinces,
+  fetchPublicWards,
+} from '../../services/public.service';
 import '../../styles/vendor.css';
 
 const MAX_FILES = 15;
@@ -8,7 +13,18 @@ const MAX_FILES = 15;
 function RestaurantCreateModal({ open, onClose, onCreated }) {
   const titleId = useId();
   const fileInputRef = useRef(null);
-  const [form, setForm] = useState({ name: '', address: '', description: '' });
+  const [form, setForm] = useState({
+    name: '',
+    provinceCode: '',
+    districtCode: '',
+    wardCode: '',
+    street: '',
+    description: '',
+  });
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
+  const [locLoading, setLocLoading] = useState(false);
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [error, setError] = useState('');
@@ -25,7 +41,17 @@ function RestaurantCreateModal({ open, onClose, onCreated }) {
 
   useEffect(() => {
     if (!open) {
-      setForm({ name: '', address: '', description: '' });
+      setForm({
+        name: '',
+        provinceCode: '',
+        districtCode: '',
+        wardCode: '',
+        street: '',
+        description: '',
+      });
+      setProvinces([]);
+      setDistricts([]);
+      setWards([]);
       setFiles([]);
       setPreviews((prev) => {
         prev.forEach((u) => URL.revokeObjectURL(u));
@@ -36,6 +62,82 @@ function RestaurantCreateModal({ open, onClose, onCreated }) {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    (async () => {
+      setLocLoading(true);
+      try {
+        const data = await fetchPublicProvinces();
+        if (active && data.success) {
+          setProvinces(Array.isArray(data.provinces) ? data.provinces : []);
+        }
+      } catch (_) {
+        // fallback: hiển thị lỗi khi submit
+      } finally {
+        if (active) setLocLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!form.provinceCode) {
+      setDistricts([]);
+      setWards([]);
+      setForm((f) => ({ ...f, districtCode: '', wardCode: '' }));
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const data = await fetchPublicDistricts(form.provinceCode);
+        if (active && data.success) {
+          setDistricts(Array.isArray(data.districts) ? data.districts : []);
+          setWards([]);
+          setForm((f) => ({ ...f, districtCode: '', wardCode: '' }));
+        }
+      } catch (_) {
+        if (active) {
+          setDistricts([]);
+          setWards([]);
+          setForm((f) => ({ ...f, districtCode: '', wardCode: '' }));
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [form.provinceCode]);
+
+  useEffect(() => {
+    if (!form.districtCode) {
+      setWards([]);
+      setForm((f) => ({ ...f, wardCode: '' }));
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const data = await fetchPublicWards(form.districtCode);
+        if (active && data.success) {
+          setWards(Array.isArray(data.wards) ? data.wards : []);
+          setForm((f) => ({ ...f, wardCode: '' }));
+        }
+      } catch (_) {
+        if (active) {
+          setWards([]);
+          setForm((f) => ({ ...f, wardCode: '' }));
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [form.districtCode]);
 
   const handleFiles = (e) => {
     const selected = Array.from(e.target.files || []).slice(0, MAX_FILES);
@@ -54,7 +156,16 @@ function RestaurantCreateModal({ open, onClose, onCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.address.trim()) return;
+    if (
+      !form.name.trim() ||
+      !form.provinceCode ||
+      !form.districtCode ||
+      !form.wardCode ||
+      !form.street.trim()
+    ) {
+      setError('Vui lòng chọn tỉnh/quận/phường và nhập số nhà, đường.');
+      return;
+    }
 
     setError('');
     let uploadedPayload = [];
@@ -75,9 +186,20 @@ function RestaurantCreateModal({ open, onClose, onCreated }) {
       }
 
       setPhase('create');
+      const province = provinces.find((p) => p.code === form.provinceCode);
+      const district = districts.find((d) => d.code === form.districtCode);
+      const ward = wards.find((w) => w.code === form.wardCode);
       const data = await createRestaurant({
         name: form.name.trim(),
-        address: form.address.trim(),
+        addressDetail: {
+          provinceCode: form.provinceCode,
+          provinceName: province?.name || '',
+          districtCode: form.districtCode,
+          districtName: district?.name || '',
+          wardCode: form.wardCode,
+          wardName: ward?.name || '',
+          street: form.street.trim(),
+        },
         description: form.description.trim(),
         images: uploadedPayload,
       });
@@ -144,13 +266,67 @@ function RestaurantCreateModal({ open, onClose, onCreated }) {
           </label>
 
           <label className="vendor-field">
-            <span className="vendor-field__label">Địa chỉ *</span>
+            <span className="vendor-field__label">Tỉnh/Thành *</span>
+            <select
+              className="vendor-field__input"
+              required
+              disabled={busy || locLoading}
+              value={form.provinceCode}
+              onChange={(e) => setForm((f) => ({ ...f, provinceCode: e.target.value }))}
+            >
+              <option value="">{locLoading ? 'Đang tải...' : '-- Chọn tỉnh/thành --'}</option>
+              {provinces.map((p) => (
+                <option key={p.code} value={p.code}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="vendor-field">
+            <span className="vendor-field__label">Quận/Huyện *</span>
+            <select
+              className="vendor-field__input"
+              required
+              disabled={busy || !form.provinceCode}
+              value={form.districtCode}
+              onChange={(e) => setForm((f) => ({ ...f, districtCode: e.target.value }))}
+            >
+              <option value="">-- Chọn quận/huyện --</option>
+              {districts.map((d) => (
+                <option key={d.code} value={d.code}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="vendor-field">
+            <span className="vendor-field__label">Phường/Xã *</span>
+            <select
+              className="vendor-field__input"
+              required
+              disabled={busy || !form.districtCode}
+              value={form.wardCode}
+              onChange={(e) => setForm((f) => ({ ...f, wardCode: e.target.value }))}
+            >
+              <option value="">-- Chọn phường/xã --</option>
+              {wards.map((w) => (
+                <option key={w.code} value={w.code}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="vendor-field">
+            <span className="vendor-field__label">Số nhà, đường *</span>
             <input
               className="vendor-field__input"
               required
               disabled={busy}
-              value={form.address}
-              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+              value={form.street}
+              onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))}
               autoComplete="street-address"
             />
           </label>

@@ -6,6 +6,7 @@ import ImageCarousel from '../../components/vendor/ImageCarousel';
 import '../../styles/vendor.css';
 
 function approvalLabel(s) {
+  if (s === 'DRAFT') return { text: 'Nháp', className: '' };
   if (s === 'APPROVED') return { text: 'Đã duyệt', className: 'vendor-card__badge--approved' };
   if (s === 'REJECTED') return { text: 'Từ chối', className: '' };
   return { text: 'Chờ duyệt', className: '' };

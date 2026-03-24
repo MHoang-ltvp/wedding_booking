@@ -14,6 +14,7 @@ vendorRestaurantRouter.use(authMiddleware, roleMiddleware(['VENDOR']));
 vendorRestaurantRouter.get('/me', restaurantController.getMyRestaurant);
 vendorRestaurantRouter.get('/:id', restaurantController.getById);
 vendorRestaurantRouter.post('/', restaurantController.create);
+vendorRestaurantRouter.put('/:id/submit-approval', restaurantController.submitForApproval);
 vendorRestaurantRouter.put('/:id', restaurantController.update);
 
 // Router cho /api/admin/restaurants
@@ -23,6 +24,7 @@ adminRestaurantRouter.put(
   '/:id/approval',
   restaurantController.setAdminRestaurantApproval,
 );
+adminRestaurantRouter.get('/:id', restaurantController.getAdminRestaurantById);
 adminRestaurantRouter.get('/', restaurantController.getAdminRestaurants);
 
 module.exports = { vendorRestaurantRouter, adminRestaurantRouter };

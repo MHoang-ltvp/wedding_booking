@@ -49,6 +49,7 @@ function App() {
               <Route path="venues/:restaurantId" element={<VendorVenueDetail />} />
               <Route path="bookings" element={<VendorBookings />} />
               <Route path="analytics" element={<VendorAnalytics />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
           </Route>
           <Route path="/admin" element={<AdminRoute />}>

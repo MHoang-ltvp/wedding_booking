@@ -794,6 +794,111 @@
   flex-wrap: wrap;
 }
 
+.vendor-toast {
+  position: fixed;
+  right: 1rem;
+  top: 1rem;
+  z-index: 1300;
+  min-width: 300px;
+  max-width: min(420px, calc(100vw - 2rem));
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.96);
+  color: #e2e8f0;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+}
+
+.vendor-toast--error {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(69, 10, 10, 0.92);
+  color: #fecaca;
+}
+
+.vendor-toast--success {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(6, 78, 59, 0.95);
+  color: #bbf7d0;
+}
+
+.vendor-toast__text {
+  flex: 1;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.vendor-toast__close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.88;
+}
+
+.vendor-toast__close:hover {
+  opacity: 1;
+}
+
+.vendor-side-modal {
+  position: fixed;
+  right: 1rem;
+  top: 4.8rem;
+  z-index: 1310;
+  width: min(420px, calc(100vw - 2rem));
+  border-radius: 14px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(30, 8, 8, 0.97);
+  color: #fecaca;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.vendor-side-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.vendor-side-modal__title {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #fee2e2;
+}
+
+.vendor-side-modal__close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.vendor-side-modal__body {
+  padding: 0.85rem 0.9rem 0.4rem;
+}
+
+.vendor-side-modal__body p {
+  margin: 0 0 0.55rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.vendor-side-modal__actions {
+  padding: 0.4rem 0.9rem 0.9rem;
+}
+
 @media (max-width: 900px) {
   .vendor-app {
     flex-direction: column;

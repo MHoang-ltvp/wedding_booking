@@ -10,6 +10,15 @@ const restaurantSchema = new mongoose.Schema(
     },
     name: { type: String, required: true },
     address: { type: String, required: true },
+    addressDetail: {
+      provinceCode: { type: String, default: '' },
+      provinceName: { type: String, default: '' },
+      districtCode: { type: String, default: '' },
+      districtName: { type: String, default: '' },
+      wardCode: { type: String, default: '' },
+      wardName: { type: String, default: '' },
+      street: { type: String, default: '' },
+    },
     description: { type: String },
     contact: {
       name: { type: String, default: '' },
@@ -24,8 +33,8 @@ const restaurantSchema = new mongoose.Schema(
     ],
     approvalStatus: {
       type: String,
-      enum: ['PENDING', 'APPROVED', 'REJECTED'],
-      default: 'PENDING',
+      enum: ['DRAFT', 'PENDING', 'APPROVED', 'REJECTED'],
+      default: 'DRAFT',
       index: true,
     },
     status: {

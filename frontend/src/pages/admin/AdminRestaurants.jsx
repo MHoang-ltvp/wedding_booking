@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchAdminRestaurants, setRestaurantApproval } from '../../services/admin.service';
+import {
+  fetchAdminRestaurantById,
+  fetchAdminRestaurants,
+  setRestaurantApproval,
+} from '../../services/admin.service';
 import '../../styles/vendor.css';
 import '../../styles/admin.css';
 
@@ -26,6 +30,10 @@ function AdminRestaurants() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [detailData, setDetailData] = useState(null);
 
   const load = useCallback(async () => {
     setError('');
@@ -67,6 +75,25 @@ function AdminRestaurants() {
     }
   };
 
+  const openDetail = async (id) => {
+    setDetailOpen(true);
+    setDetailLoading(true);
+    setDetailError('');
+    setDetailData(null);
+    try {
+      const data = await fetchAdminRestaurantById(id);
+      if (data.success) {
+        setDetailData(data);
+      } else {
+        setDetailError(data.message || 'Không tải được chi tiết nhà hàng.');
+      }
+    } catch (e) {
+      setDetailError(e.response?.data?.message || e.message || 'Lỗi tải chi tiết nhà hàng.');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
@@ -92,7 +119,7 @@ function AdminRestaurants() {
               setApprovalStatus(e.target.value);
             }}
           >
-            <option value="">Tất cả</option>
+            <option value="">Tất cả (không gồm nháp)</option>
             <option value="PENDING">Chờ duyệt</option>
             <option value="APPROVED">Đã duyệt</option>
             <option value="REJECTED">Từ chối</option>
@@ -124,6 +151,9 @@ function AdminRestaurants() {
           Lọc
         </button>
       </div>
+      <p className="vendor-muted" style={{ marginTop: '-0.5rem', marginBottom: '0.9rem' }}>
+        Ghi chú: Nhà hàng ở trạng thái <strong>DRAFT</strong> chỉ hiển thị cho Vendor, Admin không xem được.
+      </p>
 
       {loading ? (
         <p className="vendor-muted">Đang tải…</p>
@@ -181,6 +211,14 @@ function AdminRestaurants() {
                             Từ chối
                           </button>
                         )}
+                        <button
+                          type="button"
+                          className="vendor-btn-ghost"
+                          style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                          onClick={() => openDetail(r._id)}
+                        >
+                          Xem chi tiết
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -211,6 +249,78 @@ function AdminRestaurants() {
             </button>
           </div>
         </>
+      )}
+
+      {detailOpen && (
+        <div
+          className="vendor-modal-backdrop"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setDetailOpen(false);
+          }}
+        >
+          <div className="vendor-modal" role="dialog" aria-modal="true" aria-labelledby="admin-restaurant-detail">
+            <h3 id="admin-restaurant-detail" className="vendor-modal__title">
+              Chi tiết nhà hàng
+            </h3>
+
+            {detailLoading ? (
+              <p className="vendor-muted">Đang tải chi tiết…</p>
+            ) : detailError ? (
+              <p className="vendor-alert vendor-alert--error">{detailError}</p>
+            ) : detailData?.restaurant ? (
+              <div style={{ display: 'grid', gap: '0.65rem' }}>
+                <div>
+                  <p><strong>Tên:</strong> {detailData.restaurant.name}</p>
+                  <p><strong>Địa chỉ:</strong> {detailData.restaurant.address}</p>
+                  <p><strong>Mô tả:</strong> {detailData.restaurant.description || '—'}</p>
+                  <p>
+                    <strong>Vendor:</strong> {detailData.restaurant.vendorId?.fullName || '—'} (
+                    {detailData.restaurant.vendorId?.email || '—'})
+                  </p>
+                </div>
+
+                <div>
+                  <h4 style={{ marginBottom: '0.35rem' }}>Sảnh ({detailData.halls?.length || 0})</h4>
+                  {detailData.halls?.length ? (
+                    <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
+                      {detailData.halls.map((h) => (
+                        <li key={h._id}>
+                          {h.name} — {h.capacity} khách — {h.basePrice?.toLocaleString('vi-VN')} đ — {h.status}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="vendor-muted">Chưa có sảnh.</p>
+                  )}
+                </div>
+
+                <div>
+                  <h4 style={{ marginBottom: '0.35rem' }}>Menu/Gói ({detailData.services?.length || 0})</h4>
+                  {detailData.services?.length ? (
+                    <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
+                      {detailData.services.map((s) => (
+                        <li key={s._id}>
+                          [{s.type}] {s.name} — {s.price?.toLocaleString('vi-VN')} đ
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="vendor-muted">Chưa có menu/gói dịch vụ.</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <p className="vendor-muted">Không có dữ liệu.</p>
+            )}
+
+            <div className="vendor-modal__actions" style={{ marginTop: '1rem' }}>
+              <button type="button" className="vendor-btn-ghost" onClick={() => setDetailOpen(false)}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

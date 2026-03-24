@@ -34,6 +34,15 @@ function IconChart() {
   );
 }
 
+function IconUser() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="9" r="3.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5 20v-1a7 7 0 0114 0v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 const NAV = [
   {
     to: '/vendor/venues',
@@ -52,6 +61,12 @@ const NAV = [
     label: 'Thống kê',
     icon: IconChart,
     active: (p) => p.startsWith('/vendor/analytics'),
+  },
+  {
+    to: '/vendor/profile',
+    label: 'Thông tin cá nhân',
+    icon: IconUser,
+    active: (p) => p.startsWith('/vendor/profile'),
   },
 ];
 

@@ -67,8 +67,17 @@ const register = async (req, res) => {
         vendorId: user._id,
         name: "Chưa cập nhật",
         address: "Chưa cập nhật",
+        addressDetail: {
+          provinceCode: "",
+          provinceName: "",
+          districtCode: "",
+          districtName: "",
+          wardCode: "",
+          wardName: "",
+          street: "",
+        },
         description: "",
-        approvalStatus: "PENDING",
+        approvalStatus: "DRAFT",
         status: "ACTIVE",
       });
     }

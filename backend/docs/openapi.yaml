@@ -265,6 +265,40 @@ paths:
                       slots: { type: array }
                       hallBookable: { type: boolean }
 
+  /api/public/locations/provinces:
+    get:
+      tags: [Public]
+      summary: Danh sách tỉnh/thành (nguồn public)
+      responses:
+        "200":
+          description: OK
+
+  /api/public/locations/districts:
+    get:
+      tags: [Public]
+      summary: Danh sách quận/huyện theo tỉnh
+      parameters:
+        - name: provinceCode
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+
+  /api/public/locations/wards:
+    get:
+      tags: [Public]
+      summary: Danh sách phường/xã theo quận/huyện
+      parameters:
+        - name: districtCode
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+
   /api/users/me:
     get:
       tags: [Users]
@@ -381,7 +415,7 @@ paths:
               properties:
                 approvalStatus:
                   type: string
-                  enum: [APPROVED, REJECTED, PENDING]
+                  enum: [DRAFT, APPROVED, REJECTED, PENDING]
                 note:
                   type: string
       responses:
@@ -438,6 +472,23 @@ paths:
       responses:
         "200":
           description: OK
+        "409":
+          description: Nhà hàng đang PENDING, không cho sửa
+
+  /api/vendor/restaurants/{id}/submit-approval:
+    put:
+      tags: [Vendor — Restaurants]
+      summary: Gửi duyệt hồ sơ nhà hàng
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/ObjectId"
+      responses:
+        "200":
+          description: Đã chuyển sang PENDING
+        "400":
+          description: Thiếu dữ liệu hoặc chưa có đủ 1 sảnh + 1 menu FOOD
+        "409":
+          description: Đã ở trạng thái PENDING
         "404":
           $ref: "#/components/responses/NotFound"
     put:
@@ -468,7 +519,16 @@ paths:
               type: object
               properties:
                 name: { type: string }
-                address: { type: string }
+                addressDetail:
+                  type: object
+                  properties:
+                    provinceCode: { type: string }
+                    provinceName: { type: string }
+                    districtCode: { type: string }
+                    districtName: { type: string }
+                    wardCode: { type: string }
+                    wardName: { type: string }
+                    street: { type: string }
                 description: { type: string }
       responses:
         "201":

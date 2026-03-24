@@ -4,6 +4,8 @@ import {
   fetchRestaurant,
   fetchHalls,
   fetchServices,
+  submitRestaurantApproval,
+  updateRestaurant,
   createHall,
   updateHall,
   deleteHall,
@@ -43,6 +45,17 @@ function VendorVenueDetail() {
   const [error, setError] = useState('');
   const [hallError, setHallError] = useState('');
   const [serviceError, setServiceError] = useState('');
+  const [submitBusy, setSubmitBusy] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [submitModal, setSubmitModal] = useState(null);
+  const [restaurantForm, setRestaurantForm] = useState({
+    name: '',
+    address: '',
+    description: '',
+    images: [],
+  });
+  const [restaurantNewFiles, setRestaurantNewFiles] = useState([]);
+  const [savingRestaurant, setSavingRestaurant] = useState(false);
 
   const [hallForm, setHallForm] = useState({
     name: '',
@@ -72,6 +85,11 @@ function VendorVenueDetail() {
   /** Ảnh mới khi sửa gói (upload trước khi PUT) */
   const [editSvcNewFiles, setEditSvcNewFiles] = useState([]);
   const [savingSvcEdit, setSavingSvcEdit] = useState(false);
+
+  const showToast = (message, type = 'error') => {
+    if (!message) return;
+    setToast({ message, type });
+  };
 
   const setActiveTab = (tab) => {
     const next = new URLSearchParams(searchParams);
@@ -109,6 +127,60 @@ function VendorVenueDetail() {
   useEffect(() => {
     loadAll();
   }, [loadAll]);
+
+  useEffect(() => {
+    if (!restaurant) return;
+    setRestaurantForm({
+      name: restaurant.name || '',
+      address: restaurant.address || '',
+      description: restaurant.description || '',
+      images: Array.isArray(restaurant.images) ? [...restaurant.images] : [],
+    });
+    setRestaurantNewFiles([]);
+  }, [restaurant?._id]);
+
+  const handleUpdateRestaurant = async (e) => {
+    e.preventDefault();
+    if (!restaurant?._id) return;
+    setError('');
+    const name = restaurantForm.name.trim();
+    const address = restaurantForm.address.trim();
+    if (!name || !address) {
+      showToast('Tên và địa chỉ nhà hàng không được để trống.');
+      return;
+    }
+    setSavingRestaurant(true);
+    try {
+      let mergedImages = [...(restaurantForm.images || [])];
+      if (restaurantNewFiles.length > 0) {
+        const up = await uploadImages(restaurantNewFiles);
+        if (!up.success || !Array.isArray(up.images)) {
+          showToast(up.message || 'Lỗi upload ảnh nhà hàng.');
+          return;
+        }
+        mergedImages = [
+          ...mergedImages,
+          ...up.images.map((img) => ({ url: img.url, public_id: img.public_id })),
+        ];
+      }
+      const data = await updateRestaurant(restaurant._id, {
+        name,
+        address,
+        description: restaurantForm.description.trim(),
+        images: mergedImages,
+      });
+      if (data.success) {
+        showToast('Đã cập nhật thông tin nhà hàng.', 'success');
+        await loadAll();
+      } else {
+        showToast(data.message || 'Không cập nhật được nhà hàng.');
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || err.message || 'Lỗi cập nhật nhà hàng.');
+    } finally {
+      setSavingRestaurant(false);
+    }
+  };
 
   const handleCreateHall = async (e) => {
     e.preventDefault();
@@ -161,16 +233,80 @@ function VendorVenueDetail() {
           status: 'AVAILABLE',
         });
         setHallImageFiles([]);
+        showToast('Đã thêm sảnh thành công.', 'success');
         await loadAll();
       } else {
-        setHallError(data.message || 'Không tạo được sảnh.');
+        const msg = data.message || 'Không tạo được sảnh.';
+        setHallError(msg);
+        showToast(msg);
       }
     } catch (err) {
-      setHallError(err.response?.data?.message || err.message || 'Lỗi tạo sảnh.');
+      const msg = err.response?.data?.message || err.message || 'Lỗi tạo sảnh.';
+      setHallError(msg);
+      showToast(msg);
     } finally {
       setSavingHall(false);
     }
   };
+
+  const handleSubmitApproval = async () => {
+    if (!restaurant?._id) return;
+    const hallCount = restaurant.hallCount || 0;
+    const menuCount = restaurant.menuCount || 0;
+    if (hallCount < 1 || menuCount < 1) {
+      setSubmitModal({
+        title: 'Chưa đủ điều kiện gửi duyệt',
+        lines: [
+          `Hiện tại có ${hallCount} sảnh và ${menuCount} menu FOOD.`,
+          'Cần tối thiểu 1 sảnh và 1 menu FOOD trước khi gửi duyệt.',
+        ],
+      });
+      return;
+    }
+    setError('');
+    setSubmitBusy(true);
+    try {
+      const data = await submitRestaurantApproval(restaurant._id);
+      if (!data.success) {
+        const req = data?.requirements;
+        if (req && (req.hallCount < req.minHalls || req.menuCount < req.minMenus)) {
+          setSubmitModal({
+            title: 'Chưa đủ điều kiện gửi duyệt',
+            lines: [
+              `Hiện tại có ${req.hallCount} sảnh và ${req.menuCount} menu FOOD.`,
+              `Yêu cầu tối thiểu ${req.minHalls} sảnh và ${req.minMenus} menu FOOD.`,
+            ],
+          });
+        } else {
+          showToast(data.message || 'Gửi duyệt thất bại.');
+        }
+        return;
+      }
+      showToast('Đã gửi duyệt cho admin.', 'success');
+      await loadAll();
+    } catch (err) {
+      const req = err.response?.data?.requirements;
+      if (req && (req.hallCount < req.minHalls || req.menuCount < req.minMenus)) {
+        setSubmitModal({
+          title: 'Chưa đủ điều kiện gửi duyệt',
+          lines: [
+            `Hiện tại có ${req.hallCount} sảnh và ${req.menuCount} menu FOOD.`,
+            `Yêu cầu tối thiểu ${req.minHalls} sảnh và ${req.minMenus} menu FOOD.`,
+          ],
+        });
+      } else {
+        showToast(err.response?.data?.message || err.message || 'Lỗi gửi duyệt.');
+      }
+    } finally {
+      setSubmitBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!toast?.message) return undefined;
+    const t = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const handleUpdateHall = async (e) => {
     e.preventDefault();
@@ -215,12 +351,17 @@ function VendorVenueDetail() {
       if (data.success) {
         setEditingHall(null);
         setHallEditNewFiles([]);
+        showToast('Đã cập nhật sảnh.', 'success');
         await loadAll();
       } else {
-        setHallError(data.message || 'Không cập nhật được.');
+        const msg = data.message || 'Không cập nhật được.';
+        setHallError(msg);
+        showToast(msg);
       }
     } catch (err) {
-      setHallError(err.response?.data?.message || err.message || 'Lỗi cập nhật sảnh.');
+      const msg = err.response?.data?.message || err.message || 'Lỗi cập nhật sảnh.';
+      setHallError(msg);
+      showToast(msg);
     } finally {
       setSavingHallEdit(false);
     }
@@ -231,10 +372,18 @@ function VendorVenueDetail() {
     setHallError('');
     try {
       const data = await deleteHall(hallId);
-      if (data.success) await loadAll();
-      else setHallError(data.message || 'Không xóa được.');
+      if (data.success) {
+        showToast('Đã xóa sảnh.', 'success');
+        await loadAll();
+      } else {
+        const msg = data.message || 'Không xóa được.';
+        setHallError(msg);
+        showToast(msg);
+      }
     } catch (err) {
-      setHallError(err.response?.data?.message || err.message || 'Lỗi xóa sảnh.');
+      const msg = err.response?.data?.message || err.message || 'Lỗi xóa sảnh.';
+      setHallError(msg);
+      showToast(msg);
     }
   };
 
@@ -288,12 +437,17 @@ function VendorVenueDetail() {
           description: '',
         });
         setPkgImageFiles([]);
+        showToast('Đã thêm gói dịch vụ.', 'success');
         await loadAll();
       } else {
-        setServiceError(data.message || 'Không tạo được gói.');
+        const msg = data.message || 'Không tạo được gói.';
+        setServiceError(msg);
+        showToast(msg);
       }
     } catch (err) {
-      setServiceError(err.response?.data?.message || err.message || 'Lỗi tạo gói.');
+      const msg = err.response?.data?.message || err.message || 'Lỗi tạo gói.';
+      setServiceError(msg);
+      showToast(msg);
     } finally {
       setSavingPkg(false);
     }
@@ -338,12 +492,17 @@ function VendorVenueDetail() {
       if (data.success) {
         setEditingSvc(null);
         setEditSvcNewFiles([]);
+        showToast('Đã cập nhật gói dịch vụ.', 'success');
         await loadAll();
       } else {
-        setServiceError(data.message || 'Không cập nhật được.');
+        const msg = data.message || 'Không cập nhật được.';
+        setServiceError(msg);
+        showToast(msg);
       }
     } catch (err) {
-      setServiceError(err.response?.data?.message || err.message || 'Lỗi cập nhật gói.');
+      const msg = err.response?.data?.message || err.message || 'Lỗi cập nhật gói.';
+      setServiceError(msg);
+      showToast(msg);
     } finally {
       setSavingSvcEdit(false);
     }
@@ -354,10 +513,18 @@ function VendorVenueDetail() {
     setServiceError('');
     try {
       const data = await deleteServicePackage(svc._id);
-      if (data.success) await loadAll();
-      else setServiceError(data.message || 'Không xóa được.');
+      if (data.success) {
+        showToast('Đã xóa gói dịch vụ.', 'success');
+        await loadAll();
+      } else {
+        const msg = data.message || 'Không xóa được.';
+        setServiceError(msg);
+        showToast(msg);
+      }
     } catch (err) {
-      setServiceError(err.response?.data?.message || err.message || 'Lỗi xóa gói.');
+      const msg = err.response?.data?.message || err.message || 'Lỗi xóa gói.';
+      setServiceError(msg);
+      showToast(msg);
     }
   };
 
@@ -374,6 +541,12 @@ function VendorVenueDetail() {
 
   const food = services.filter((s) => s.type === 'FOOD');
   const decor = services.filter((s) => s.type === 'DECORATION');
+  const isPendingApproval = restaurant?.approvalStatus === 'PENDING';
+  const canSubmitApproval =
+    restaurant &&
+    !isPendingApproval &&
+    (restaurant.hallCount || 0) > 0 &&
+    (restaurant.menuCount || 0) > 0;
 
   if (loading) {
     return <p className="vendor-muted">Đang tải…</p>;
@@ -411,7 +584,142 @@ function VendorVenueDetail() {
             {restaurant.description}
           </p>
         )}
+        <p className="vendor-muted" style={{ marginTop: '0.5rem' }}>
+          Trạng thái duyệt: <strong>{restaurant.approvalStatus}</strong> · Sảnh: {restaurant.hallCount || 0} · Menu:{' '}
+          {restaurant.menuCount || 0}
+        </p>
+        {isPendingApproval && (
+          <p className="vendor-alert" style={{ marginTop: '0.65rem' }}>
+            Nhà hàng đang chờ duyệt, bạn không thể chỉnh sửa sảnh/menu lúc này.
+          </p>
+        )}
+        {!isPendingApproval && (
+          <button
+            type="button"
+            className="vendor-btn-primary"
+            onClick={handleSubmitApproval}
+            disabled={submitBusy}
+            style={{ marginTop: '0.65rem' }}
+          >
+            {submitBusy ? 'Đang gửi duyệt…' : 'Gửi duyệt cho admin'}
+          </button>
+        )}
       </div>
+
+      <section className="vendor-hall-form" style={{ marginBottom: '1rem' }}>
+        <p className="vendor-section-sub">Thông tin nhà hàng</p>
+        <form onSubmit={handleUpdateRestaurant}>
+          <div className="vendor-hall-form__grid">
+            <label className="vendor-field">
+              <span className="vendor-field__label">Tên nhà hàng *</span>
+              <input
+                className="vendor-field__input"
+                value={restaurantForm.name}
+                onChange={(e) => setRestaurantForm((v) => ({ ...v, name: e.target.value }))}
+                disabled={savingRestaurant || isPendingApproval}
+                required
+              />
+            </label>
+            <label className="vendor-field">
+              <span className="vendor-field__label">Địa chỉ *</span>
+              <input
+                className="vendor-field__input"
+                value={restaurantForm.address}
+                onChange={(e) => setRestaurantForm((v) => ({ ...v, address: e.target.value }))}
+                disabled={savingRestaurant || isPendingApproval}
+                required
+              />
+            </label>
+          </div>
+          <label className="vendor-field" style={{ marginTop: '0.6rem' }}>
+            <span className="vendor-field__label">Mô tả</span>
+            <textarea
+              className="vendor-field__input vendor-field__textarea"
+              rows={3}
+              value={restaurantForm.description}
+              onChange={(e) => setRestaurantForm((v) => ({ ...v, description: e.target.value }))}
+              disabled={savingRestaurant || isPendingApproval}
+            />
+          </label>
+
+          <div className="vendor-field" style={{ marginTop: '0.6rem' }}>
+            <span className="vendor-field__label">Ảnh nhà hàng</span>
+            {(restaurantForm.images || []).length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                {(restaurantForm.images || []).map((img, idx) => (
+                  <div
+                    key={img.public_id || img.url || idx}
+                    style={{
+                      position: 'relative',
+                      width: 84,
+                      height: 64,
+                      borderRadius: 6,
+                      overflow: 'hidden',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                    }}
+                  >
+                    <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button
+                      type="button"
+                      className="vendor-btn-ghost vendor-btn-ghost--danger"
+                      style={{ position: 'absolute', top: 2, right: 2, padding: '0 0.25rem', fontSize: '0.7rem', lineHeight: 1.2 }}
+                      onClick={() =>
+                        setRestaurantForm((v) => ({
+                          ...v,
+                          images: (v.images || []).filter((_, i) => i !== idx),
+                        }))
+                      }
+                      disabled={savingRestaurant || isPendingApproval}
+                      aria-label="Xóa ảnh nhà hàng"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="vendor-field__input"
+              disabled={savingRestaurant || isPendingApproval}
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length) setRestaurantNewFiles((prev) => [...prev, ...files]);
+                e.target.value = '';
+              }}
+            />
+            {restaurantNewFiles.length > 0 && (
+              <ul style={{ marginTop: '0.35rem', paddingLeft: '1.1rem', fontSize: '0.9rem' }}>
+                {restaurantNewFiles.map((f, i) => (
+                  <li key={`${f.name}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ flex: 1 }}>{f.name} (mới)</span>
+                    <button
+                      type="button"
+                      className="vendor-btn-ghost vendor-btn-ghost--danger"
+                      style={{ padding: '0.1rem 0.35rem', fontSize: '0.75rem' }}
+                      onClick={() => setRestaurantNewFiles((prev) => prev.filter((_, j) => j !== i))}
+                      disabled={savingRestaurant || isPendingApproval}
+                    >
+                      Bỏ
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="vendor-btn-primary"
+            style={{ marginTop: '0.75rem' }}
+            disabled={savingRestaurant || isPendingApproval}
+          >
+            {savingRestaurant ? 'Đang tải ảnh / lưu…' : 'Lưu thông tin nhà hàng'}
+          </button>
+        </form>
+      </section>
 
       <div className="vendor-tabs" role="tablist" aria-label="Nội dung nhà hàng">
         <button
@@ -460,7 +768,7 @@ function VendorVenueDetail() {
                   className="vendor-field__input"
                   value={hallForm.name}
                   onChange={(e) => setHallForm((f) => ({ ...f, name: e.target.value }))}
-                  disabled={savingHall}
+                  disabled={savingHall || isPendingApproval}
                   required
                 />
               </label>
@@ -472,7 +780,7 @@ function VendorVenueDetail() {
                   min={1}
                   value={hallForm.capacity}
                   onChange={(e) => setHallForm((f) => ({ ...f, capacity: e.target.value }))}
-                  disabled={savingHall}
+                  disabled={savingHall || isPendingApproval}
                   required
                 />
               </label>
@@ -484,7 +792,7 @@ function VendorVenueDetail() {
                   min={0}
                   value={hallForm.basePrice}
                   onChange={(e) => setHallForm((f) => ({ ...f, basePrice: e.target.value }))}
-                  disabled={savingHall}
+                  disabled={savingHall || isPendingApproval}
                   required
                 />
               </label>
@@ -496,7 +804,7 @@ function VendorVenueDetail() {
                   min={0}
                   value={hallForm.area}
                   onChange={(e) => setHallForm((f) => ({ ...f, area: e.target.value }))}
-                  disabled={savingHall}
+                  disabled={savingHall || isPendingApproval}
                 />
               </label>
               <label className="vendor-field">
@@ -505,7 +813,7 @@ function VendorVenueDetail() {
                   className="vendor-field__input"
                   value={hallForm.status}
                   onChange={(e) => setHallForm((f) => ({ ...f, status: e.target.value }))}
-                  disabled={savingHall}
+                  disabled={savingHall || isPendingApproval}
                 >
                   {HALL_STATUS.map((o) => (
                     <option key={o.value} value={o.value}>
@@ -522,7 +830,7 @@ function VendorVenueDetail() {
                 rows={2}
                 value={hallForm.description}
                 onChange={(e) => setHallForm((f) => ({ ...f, description: e.target.value }))}
-                disabled={savingHall}
+                disabled={savingHall || isPendingApproval}
               />
             </label>
             <div className="vendor-field" style={{ marginTop: '0.5rem' }}>
@@ -532,7 +840,7 @@ function VendorVenueDetail() {
                 accept="image/*"
                 multiple
                 className="vendor-field__input"
-                disabled={savingHall}
+                disabled={savingHall || isPendingApproval}
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
                   if (files.length) setHallImageFiles((prev) => [...prev, ...files]);
@@ -549,7 +857,7 @@ function VendorVenueDetail() {
                         className="vendor-btn-ghost vendor-btn-ghost--danger"
                         style={{ padding: '0.15rem 0.4rem', fontSize: '0.8rem' }}
                         onClick={() => setHallImageFiles((prev) => prev.filter((_, j) => j !== i))}
-                        disabled={savingHall}
+                        disabled={savingHall || isPendingApproval}
                       >
                         Bỏ
                       </button>
@@ -562,7 +870,7 @@ function VendorVenueDetail() {
               type="submit"
               className="vendor-btn-primary"
               style={{ marginTop: '0.75rem' }}
-              disabled={savingHall}
+              disabled={savingHall || isPendingApproval}
             >
               {savingHall ? 'Đang tải ảnh / lưu…' : 'Thêm sảnh'}
             </button>
@@ -621,6 +929,7 @@ function VendorVenueDetail() {
                               images: Array.isArray(h.images) ? [...h.images] : [],
                             });
                           }}
+                          disabled={isPendingApproval}
                         >
                           Sửa
                         </button>
@@ -628,6 +937,7 @@ function VendorVenueDetail() {
                           type="button"
                           className="vendor-btn-ghost vendor-btn-ghost--danger"
                           onClick={() => handleDeleteHall(h._id, h.name)}
+                          disabled={isPendingApproval}
                         >
                           Xóa
                         </button>
@@ -663,7 +973,7 @@ function VendorVenueDetail() {
                   className="vendor-field__input"
                   value={pkgForm.name}
                   onChange={(e) => setPkgForm((f) => ({ ...f, name: e.target.value }))}
-                  disabled={savingPkg}
+                  disabled={savingPkg || isPendingApproval}
                   required
                 />
               </label>
@@ -673,7 +983,7 @@ function VendorVenueDetail() {
                   className="vendor-field__input"
                   value={pkgForm.type}
                   onChange={(e) => setPkgForm((f) => ({ ...f, type: e.target.value }))}
-                  disabled={savingPkg}
+                  disabled={savingPkg || isPendingApproval}
                 >
                   <option value="FOOD">Thực đơn / Đồ ăn</option>
                   <option value="DECORATION">Trang trí</option>
@@ -687,7 +997,7 @@ function VendorVenueDetail() {
                   min={0}
                   value={pkgForm.price}
                   onChange={(e) => setPkgForm((f) => ({ ...f, price: e.target.value }))}
-                  disabled={savingPkg}
+                  disabled={savingPkg || isPendingApproval}
                   required
                 />
               </label>
@@ -699,7 +1009,7 @@ function VendorVenueDetail() {
                 rows={3}
                 value={pkgForm.itemsText}
                 onChange={(e) => setPkgForm((f) => ({ ...f, itemsText: e.target.value }))}
-                disabled={savingPkg}
+                disabled={savingPkg || isPendingApproval}
                 placeholder="Ví dụ: Khai vị&#10;Soup&#10;Món chính"
               />
             </label>
@@ -710,7 +1020,7 @@ function VendorVenueDetail() {
                 rows={2}
                 value={pkgForm.description}
                 onChange={(e) => setPkgForm((f) => ({ ...f, description: e.target.value }))}
-                disabled={savingPkg}
+                disabled={savingPkg || isPendingApproval}
               />
             </label>
             <div className="vendor-field" style={{ marginTop: '0.5rem' }}>
@@ -720,7 +1030,7 @@ function VendorVenueDetail() {
                 accept="image/*"
                 multiple
                 className="vendor-field__input"
-                disabled={savingPkg}
+                disabled={savingPkg || isPendingApproval}
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
                   if (files.length) setPkgImageFiles((prev) => [...prev, ...files]);
@@ -737,7 +1047,7 @@ function VendorVenueDetail() {
                         className="vendor-btn-ghost vendor-btn-ghost--danger"
                         style={{ padding: '0.15rem 0.4rem', fontSize: '0.8rem' }}
                         onClick={() => setPkgImageFiles((prev) => prev.filter((_, j) => j !== i))}
-                        disabled={savingPkg}
+                        disabled={savingPkg || isPendingApproval}
                       >
                         Bỏ
                       </button>
@@ -746,7 +1056,12 @@ function VendorVenueDetail() {
                 </ul>
               )}
             </div>
-            <button type="submit" className="vendor-btn-primary" style={{ marginTop: '0.75rem' }} disabled={savingPkg}>
+            <button
+              type="submit"
+              className="vendor-btn-primary"
+              style={{ marginTop: '0.75rem' }}
+              disabled={savingPkg || isPendingApproval}
+            >
               {savingPkg ? 'Đang tải ảnh / lưu…' : 'Thêm gói'}
             </button>
           </form>
@@ -783,10 +1098,20 @@ function VendorVenueDetail() {
                         <td className="vendor-table__cell-num">{s.price?.toLocaleString('vi-VN')} đ</td>
                         <td className="vendor-table__cell-actions">
                           <div className="vendor-table__action-btns">
-                            <button type="button" className="vendor-btn-ghost" onClick={() => openEditService(s)}>
+                            <button
+                              type="button"
+                              className="vendor-btn-ghost"
+                              onClick={() => openEditService(s)}
+                              disabled={isPendingApproval}
+                            >
                               Sửa
                             </button>
-                            <button type="button" className="vendor-btn-ghost vendor-btn-ghost--danger" onClick={() => handleDeletePackage(s)}>
+                            <button
+                              type="button"
+                              className="vendor-btn-ghost vendor-btn-ghost--danger"
+                              onClick={() => handleDeletePackage(s)}
+                              disabled={isPendingApproval}
+                            >
                               Xóa
                             </button>
                           </div>
@@ -827,10 +1152,20 @@ function VendorVenueDetail() {
                         <td className="vendor-table__cell-num">{s.price?.toLocaleString('vi-VN')} đ</td>
                         <td className="vendor-table__cell-actions">
                           <div className="vendor-table__action-btns">
-                            <button type="button" className="vendor-btn-ghost" onClick={() => openEditService(s)}>
+                            <button
+                              type="button"
+                              className="vendor-btn-ghost"
+                              onClick={() => openEditService(s)}
+                              disabled={isPendingApproval}
+                            >
                               Sửa
                             </button>
-                            <button type="button" className="vendor-btn-ghost vendor-btn-ghost--danger" onClick={() => handleDeletePackage(s)}>
+                            <button
+                              type="button"
+                              className="vendor-btn-ghost vendor-btn-ghost--danger"
+                              onClick={() => handleDeletePackage(s)}
+                              disabled={isPendingApproval}
+                            >
                               Xóa
                             </button>
                           </div>
@@ -1172,6 +1507,50 @@ function VendorVenueDetail() {
             </form>
           </div>
         </div>
+      )}
+
+      {toast?.message && (
+        <aside
+          className={`vendor-toast${toast.type === 'success' ? ' vendor-toast--success' : ' vendor-toast--error'}`}
+          role="alert"
+          aria-live="assertive"
+        >
+          <p className="vendor-toast__text">{toast.message}</p>
+          <button
+            type="button"
+            className="vendor-toast__close"
+            onClick={() => setToast(null)}
+            aria-label="Đóng thông báo"
+          >
+            ×
+          </button>
+        </aside>
+      )}
+
+      {submitModal && (
+        <aside className="vendor-side-modal" role="dialog" aria-modal="true" aria-label="Thông báo gửi duyệt">
+          <div className="vendor-side-modal__head">
+            <h3 className="vendor-side-modal__title">{submitModal.title}</h3>
+            <button
+              type="button"
+              className="vendor-side-modal__close"
+              onClick={() => setSubmitModal(null)}
+              aria-label="Đóng thông báo"
+            >
+              ×
+            </button>
+          </div>
+          <div className="vendor-side-modal__body">
+            {submitModal.lines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+          <div className="vendor-side-modal__actions">
+            <button type="button" className="vendor-btn-primary" onClick={() => setSubmitModal(null)}>
+              Đã hiểu
+            </button>
+          </div>
+        </aside>
       )}
     </div>
   );
