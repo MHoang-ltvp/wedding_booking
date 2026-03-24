@@ -1,69 +1,84 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import * as authService from '../services/auth.service';
-import { clearSession, getUser, setSession } from '../utils/storage';
+import React, { createContext, useState, useEffect } from 'react';
+import api from '../api/axiosInstance';
+import { paths } from '../api/endpoints';
+import { toast } from 'react-toastify';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [bootstrapping, setBootstrapping] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setUser(getUser());
-    setBootstrapping(false);
+    checkAuth();
   }, []);
 
-  const login = useCallback(async ({ email, password, remember = true }) => {
-    const data = await authService.login({ email, password });
-    if (data.success && data.token && data.user) {
-      setSession(data.token, data.user, remember);
-      setUser(data.user);
+  const checkAuth = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
     }
-    return data;
-  }, []);
 
-  const register = useCallback(async (payload, remember = true) => {
-    const data = await authService.register(payload);
-    if (data.success && data.token && data.user) {
-      setSession(data.token, data.user, remember);
-      setUser(data.user);
+    try {
+      const res = await api.get(paths.users.me);
+      setUser(res.data.user || res.data.data || res.data);
+    } catch (error) {
+      console.error("Auth check failed", error);
+      localStorage.removeItem('token');
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
-    return data;
-  }, []);
+  };
 
-  const logout = useCallback(() => {
-    clearSession();
+  const login = async (email, password) => {
+    try {
+      const res = await api.post(paths.auth.login, { email, password });
+      localStorage.setItem('token', res.data.token);
+      const userData = res.data.user;
+      if (!userData) {
+        toast.error('Phản hồi đăng nhập không hợp lệ.');
+        return { success: false, message: 'Invalid response' };
+      }
+      setUser(userData);
+      toast.success('Đăng nhập thành công!');
+      return { success: true, role: userData.role };
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Đăng nhập thất bại. Kiểm tra email/mật khẩu.';
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      const res = await api.post(paths.auth.register, userData);
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token);
+        const u = res.data.user;
+        if (u) setUser(u);
+        toast.success('Đăng ký thành công!');
+        return { success: true, role: u?.role || userData?.role };
+      }
+      toast.success('Đăng ký thành công. Vui lòng đăng nhập.');
+      return { success: true };
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Registration failed.';
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
     setUser(null);
-  }, []);
-
-  const value = useMemo(
-    () => ({
-      user,
-      bootstrapping,
-      login,
-      register,
-      logout,
-      isAuthenticated: !!user,
-    }),
-    [user, bootstrapping, login, register, logout]
-  );
+    toast.info('Bạn đã đăng xuất.');
+  };
 
   return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth }}>
+      {children}
+    </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth phải dùng bên trong AuthProvider');
-  }
-  return ctx;
-}
+};

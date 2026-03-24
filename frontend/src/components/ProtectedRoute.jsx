@@ -1,26 +1,20 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
 
-/**
- * Chỉ cho phép vào các route con khi đã đăng nhập.
- */
-function ProtectedRoute() {
-  const { user, bootstrapping } = useAuth();
+export default function ProtectedRoute() {
+  const { user, loading } = useContext(AuthContext);
   const location = useLocation();
 
-  if (bootstrapping) {
+  if (loading) {
     return (
-      <div className="auth-page auth-page--loading">
-        <p className="auth-muted">Đang tải…</p>
+      <div className="container" style={{ padding: '3rem', textAlign: 'center' }}>
+        <p className="text-muted">Đang tải...</p>
       </div>
     );
   }
-
   if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
-
   return <Outlet />;
 }
-
-export default ProtectedRoute;

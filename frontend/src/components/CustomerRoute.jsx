@@ -1,37 +1,25 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
 
-/**
- * Chỉ **CUSTOMER** — vendor/admin được chuyển về khu quản trị tương ứng.
- */
-function CustomerRoute() {
-  const { user, bootstrapping } = useAuth();
+export default function CustomerRoute() {
+  const { user, loading } = useContext(AuthContext);
 
-  if (bootstrapping) {
+  if (loading) {
     return (
-      <div className="vendor-app vendor-app--loading customer-app">
-        <p className="vendor-muted">Đang tải…</p>
+      <div className="container" style={{ padding: '3rem', textAlign: 'center' }}>
+        <p className="text-muted">Đang tải...</p>
       </div>
     );
   }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  if (user?.role === 'VENDOR') {
+    return <Navigate to="/vendor/dashboard" replace />;
   }
-
-  if (user.role === 'VENDOR') {
-    return <Navigate to="/vendor/venues" replace />;
-  }
-
-  if (user.role === 'ADMIN') {
+  if (user?.role === 'ADMIN') {
     return <Navigate to="/admin/dashboard" replace />;
   }
-
-  if (user.role !== 'CUSTOMER') {
-    return <Navigate to="/login" replace />;
+  if (user?.role !== 'CUSTOMER') {
+    return <Navigate to="/" replace />;
   }
-
   return <Outlet />;
 }
-
-export default CustomerRoute;

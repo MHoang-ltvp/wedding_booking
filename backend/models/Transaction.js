@@ -7,7 +7,7 @@ const transactionSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     type: {
       type: String,
-      enum: ['DEPOSIT', 'FINAL_PAYMENT'],
+      enum: ['FULL_PAYMENT', 'DEPOSIT', 'FINAL_PAYMENT'],
       required: true,
     },
     paymentMethod: { type: String, default: 'MOCK_GATEWAY' },

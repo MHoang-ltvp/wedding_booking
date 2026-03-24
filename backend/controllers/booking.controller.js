@@ -62,6 +62,12 @@ const create = async (req, res) => {
         message: 'Nhà hàng chưa được duyệt, không thể đặt.',
       });
     }
+    if (restaurant.status !== 'ACTIVE') {
+      return res.status(400).json({
+        success: false,
+        message: 'Nhà hàng đang tạm ẩn khỏi cổng khách, không thể đặt chỗ.',
+      });
+    }
 
     const hall = await Hall.findOne({
       _id: hallId,
@@ -148,6 +154,8 @@ const create = async (req, res) => {
       services: lineServices,
       customerNote: typeof customerNote === 'string' ? customerNote : '',
       estimatedTotal,
+      vendorAccepted: false,
+      paidInFull: false,
       status: 'PENDING',
     });
 
@@ -245,6 +253,12 @@ const cancel = async (req, res) => {
         message: 'Chỉ hủy được khi đang chờ xử lý.',
       });
     }
+    if (booking.paidInFull) {
+      return res.status(400).json({
+        success: false,
+        message: 'Đã thanh toán đủ, không thể hủy qua ứng dụng.',
+      });
+    }
 
     booking.status = 'CANCELLED';
     booking.cancelReason = typeof cancelReason === 'string' ? cancelReason : '';
@@ -285,8 +299,22 @@ const resubmit = async (req, res) => {
     booking.cancelReason = undefined;
     booking.rejectReason = undefined;
 
-    booking.depositPaid = false;
+    const restaurantCheck = await Restaurant.findById(booking.restaurantId).lean();
+    if (
+      !restaurantCheck ||
+      restaurantCheck.approvalStatus !== 'APPROVED' ||
+      restaurantCheck.status !== 'ACTIVE'
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nhà hàng không khả dụng để gửi lại đặt chỗ.',
+      });
+    }
+
+    booking.vendorAccepted = false;
+    booking.paidInFull = false;
     booking.paidAt = undefined;
+    booking.finalAmount = undefined;
     await booking.save();
     return res.json({ success: true, message: 'Đã gửi lại booking.', booking });
   } catch (err) {
@@ -296,7 +324,7 @@ const resubmit = async (req, res) => {
 };
 
 /**
- * POST /api/bookings/:id/confirm-payment — Khách xác nhận đã thanh toán cọc (một bước, không redirect).
+ * POST /api/bookings/:id/confirm-payment — Khách xác nhận đã thanh toán trọn gói một lần (mock).
  */
 const confirmPayment = async (req, res) => {
   try {
@@ -312,30 +340,37 @@ const confirmPayment = async (req, res) => {
     if (booking.status !== 'PENDING') {
       return res.status(400).json({
         success: false,
-        message: 'Chỉ thanh toán cọc khi booking đang chờ xử lý.',
+        message: 'Chỉ thanh toán khi booking đang chờ xử lý.',
       });
     }
-    const dep = Number(booking.depositRequired);
-    if (Number.isNaN(dep) || dep <= 0) {
+    if (!booking.vendorAccepted) {
       return res.status(400).json({
         success: false,
-        message: 'Nhà hàng chưa yêu cầu số tiền cọc.',
+        message: 'Nhà hàng chưa chấp nhận đặt chỗ. Vui lòng chờ xác nhận.',
       });
     }
-    if (booking.depositPaid) {
+    if (booking.paidInFull) {
       return res.status(400).json({
         success: false,
-        message: 'Cọc đã được ghi nhận thanh toán.',
+        message: 'Đã ghi nhận thanh toán đủ.',
+      });
+    }
+    const total = Number(booking.estimatedTotal);
+    if (Number.isNaN(total) || total <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tổng tiền không hợp lệ.',
       });
     }
 
-    booking.depositPaid = true;
+    booking.paidInFull = true;
     booking.paidAt = new Date();
+    booking.finalAmount = total;
     await booking.save();
 
     return res.json({
       success: true,
-      message: 'Đã ghi nhận thanh toán cọc.',
+      message: 'Đã ghi nhận thanh toán trọn gói.',
       booking,
     });
   } catch (err) {
@@ -406,13 +441,8 @@ const getVendorBookings = async (req, res) => {
 const approve = async (req, res) => {
   try {
     const { id } = req.params;
-    const { depositRequired } = req.body || {};
-    const dep = Number(depositRequired);
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'ID không hợp lệ.' });
-    }
-    if (Number.isNaN(dep) || dep < 0) {
-      return res.status(400).json({ success: false, message: 'depositRequired không hợp lệ.' });
     }
 
     const booking = await Booking.findById(id);
@@ -426,18 +456,24 @@ const approve = async (req, res) => {
     if (booking.status !== 'PENDING') {
       return res.status(400).json({ success: false, message: 'Booking không ở trạng thái chờ xử lý.' });
     }
+    if (booking.vendorAccepted) {
+      return res.status(400).json({
+        success: false,
+        message: 'Đặt chỗ đã được chấp nhận trước đó.',
+      });
+    }
 
-    booking.depositRequired = dep;
+    booking.vendorAccepted = true;
     await booking.save();
 
     return res.json({
       success: true,
-      message: 'Đã ghi nhận số tiền cọc yêu cầu.',
+      message: 'Đã chấp nhận đặt chỗ. Khách có thể thanh toán trọn gói một lần.',
       booking,
     });
   } catch (err) {
     console.error('booking.approve:', err);
-    return res.status(500).json({ success: false, message: 'Lỗi duyệt booking.' });
+    return res.status(500).json({ success: false, message: 'Lỗi chấp nhận booking.' });
   }
 };
 
@@ -459,6 +495,12 @@ const reject = async (req, res) => {
     }
     if (booking.status !== 'PENDING') {
       return res.status(400).json({ success: false, message: 'Booking không ở trạng thái chờ xử lý.' });
+    }
+    if (booking.paidInFull) {
+      return res.status(400).json({
+        success: false,
+        message: 'Đã thanh toán, không thể từ chối qua đây.',
+      });
     }
 
     booking.status = 'REJECTED';
@@ -498,6 +540,12 @@ const updateVendorStatus = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Chỉ hoàn thành khi booking đang chờ xử lý.',
+      });
+    }
+    if (!booking.paidInFull) {
+      return res.status(400).json({
+        success: false,
+        message: 'Khách chưa thanh toán đủ, không thể đánh dấu hoàn thành.',
       });
     }
 

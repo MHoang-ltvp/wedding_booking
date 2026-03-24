@@ -1,5 +1,5 @@
 /**
- * Thống kê vendor/admin. Doanh thu cọc = tổng depositRequired các booking có depositPaid.
+ * Thống kê vendor/admin. Doanh thu đã thu = tổng tiền các booking khách đã thanh toán trọn gói (paidInFull).
  */
 
 const User = require('../models/User');
@@ -20,7 +20,7 @@ const getVendorStats = async (req, res) => {
           restaurantCount: 0,
           bookingTotal: 0,
           bookingsByStatus: {},
-          depositRevenue: 0,
+          paidRevenue: 0,
         },
         restaurants: [],
       });
@@ -40,13 +40,17 @@ const getVendorStats = async (req, res) => {
       {
         $match: {
           _id: { $in: bookingIds },
-          depositPaid: true,
-          depositRequired: { $gt: 0 },
+          paidInFull: true,
         },
       },
-      { $group: { _id: null, total: { $sum: '$depositRequired' } } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $ifNull: ['$finalAmount', '$estimatedTotal'] } },
+        },
+      },
     ]);
-    const depositRevenue = paidAgg[0]?.total || 0;
+    const paidRevenue = paidAgg[0]?.total || 0;
 
     return res.json({
       success: true,
@@ -54,7 +58,7 @@ const getVendorStats = async (req, res) => {
         restaurantCount: restaurants.length,
         bookingTotal: bookings.length,
         bookingsByStatus,
-        depositRevenue,
+        paidRevenue,
       },
       restaurants,
     });

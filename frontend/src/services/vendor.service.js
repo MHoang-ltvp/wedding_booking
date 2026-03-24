@@ -1,125 +1,61 @@
-import api from '../lib/api';
+import api from '../api/axiosInstance';
+import { paths } from '../api/endpoints';
 
-export async function fetchMyRestaurants() {
-  const { data } = await api.get('/vendor/restaurants/me');
-  return data;
-}
+const STORAGE_KEY = 'vendorRestaurantId';
 
-export async function fetchRestaurant(restaurantId) {
-  const { data } = await api.get(`/vendor/restaurants/${restaurantId}`);
-  return data;
-}
-
-export async function createRestaurant(body) {
-  const { data } = await api.post('/vendor/restaurants', body);
-  return data;
-}
-
-export async function updateRestaurant(restaurantId, body) {
-  const { data } = await api.put(`/vendor/restaurants/${restaurantId}`, body);
-  return data;
-}
-
-export async function submitRestaurantApproval(restaurantId) {
-  const { data } = await api.put(`/vendor/restaurants/${restaurantId}/submit-approval`);
-  return data;
-}
-
-export async function fetchHalls(restaurantId) {
-  const { data } = await api.get('/vendor/halls', {
-    params: { restaurantId },
-  });
-  return data;
-}
-
-export async function fetchServices(restaurantId) {
-  const { data } = await api.get('/vendor/services', {
-    params: { restaurantId },
-  });
-  return data;
-}
-
-export async function createHall(body) {
-  const { data } = await api.post('/vendor/halls', body);
-  return data;
-}
-
-export async function updateHall(hallId, body) {
-  const { data } = await api.put(`/vendor/halls/${hallId}`, body);
-  return data;
-}
-
-export async function deleteHall(hallId) {
-  const { data } = await api.delete(`/vendor/halls/${hallId}`);
-  return data;
-}
-
-/**
- * POST /api/vendor/halls/:id/images — multipart field "images" (Cloudinary, gắn vào sảnh).
- * @param {string} hallId
- * @param {File[]} files
- */
-export async function uploadHallImages(hallId, files) {
-  if (!files?.length) {
-    return { success: true, hall: null, added: [] };
+/** @deprecated Dùng VendorRestaurantContext; hàm này chỉ gán nhà hàng đầu tiên nếu cần tương thích cũ */
+export async function syncVendorRestaurantId() {
+  const { data } = await api.get(paths.vendor.restaurantsMe);
+  const list = data.restaurants || [];
+  if (list.length === 0) {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
   }
-  const fd = new FormData();
-  for (const file of files) {
-    fd.append('images', file);
-  }
-  const { data } = await api.post(`/vendor/halls/${hallId}/images`, fd, {
-    timeout: 120000,
-    maxBodyLength: Infinity,
-    maxContentLength: Infinity,
-  });
+  const id = String(list[0]._id);
+  localStorage.setItem(STORAGE_KEY, id);
+  return id;
+}
+
+export function getStoredVendorRestaurantId() {
+  return localStorage.getItem(STORAGE_KEY);
+}
+
+export async function fetchVendorRestaurantsMe() {
+  const { data } = await api.get(paths.vendor.restaurantsMe);
+  return Array.isArray(data.restaurants) ? data.restaurants : [];
+}
+
+export async function deleteVendorRestaurant(restaurantId) {
+  const { data } = await api.delete(paths.vendor.restaurant(restaurantId));
   return data;
 }
 
-/** ServicePackage — theo restaurantId */
-export async function createServicePackage(body) {
-  const { data } = await api.post('/vendor/services', body);
+/** PUT /vendor/restaurants/:id/submit-approval */
+export async function submitVendorRestaurantForApproval(restaurantId) {
+  const { data } = await api.put(paths.vendor.restaurantSubmitApproval(restaurantId), {});
   return data;
 }
 
-export async function updateServicePackage(serviceId, body) {
-  const { data } = await api.put(`/vendor/services/${serviceId}`, body);
+/** PUT /vendor/restaurants/:id/withdraw-approval — PENDING → DRAFT */
+export async function withdrawVendorRestaurantApproval(restaurantId) {
+  const { data } = await api.put(paths.vendor.restaurantWithdrawApproval(restaurantId), {});
   return data;
 }
 
-export async function deleteServicePackage(serviceId) {
-  const { data } = await api.delete(`/vendor/services/${serviceId}`);
-  return data;
+export async function fetchVendorHalls(restaurantId) {
+  const { data } = await api.get(paths.vendor.halls, { params: { restaurantId } });
+  return Array.isArray(data.halls) ? data.halls : [];
 }
 
-/** GET /api/vendor/bookings */
-export async function fetchVendorBookings(params) {
-  const { data } = await api.get('/vendor/bookings', { params });
-  return data;
+export async function fetchVendorServices(restaurantId) {
+  const { data } = await api.get(paths.vendor.services, { params: { restaurantId } });
+  return Array.isArray(data.services) ? data.services : [];
 }
 
-export async function approveVendorBooking(bookingId, depositRequired) {
-  const { data } = await api.put(`/vendor/bookings/${bookingId}/approve`, {
-    depositRequired,
-  });
-  return data;
-}
-
-export async function rejectVendorBooking(bookingId, rejectReason) {
-  const { data } = await api.put(`/vendor/bookings/${bookingId}/reject`, {
-    rejectReason,
-  });
-  return data;
-}
-
-export async function completeVendorBooking(bookingId) {
-  const { data } = await api.put(`/vendor/bookings/${bookingId}/status`, {
-    status: 'COMPLETED',
-  });
-  return data;
-}
-
-/** GET /api/vendor/stats */
-export async function fetchVendorStats() {
-  const { data } = await api.get('/vendor/stats');
-  return data;
+export async function fetchVendorBookings(params = {}) {
+  const { data } = await api.get(paths.vendor.bookings, { params });
+  return {
+    items: Array.isArray(data.items) ? data.items : [],
+    total: data.total ?? 0,
+  };
 }

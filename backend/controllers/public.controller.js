@@ -79,6 +79,19 @@ function parseYmdLocal(ymd) {
 /** Trạng thái booking chiếm slot — khớp booking.controller create */
 const BOOKING_STATUSES_BLOCKING = { $nin: ['CANCELLED', 'REJECTED'] };
 
+/** Nhà hàng được hiển thị / đặt qua cổng khách */
+async function isRestaurantOnPublicChannel(restaurantId) {
+  if (!restaurantId || !mongoose.Types.ObjectId.isValid(restaurantId)) return false;
+  const r = await Restaurant.findOne({
+    _id: restaurantId,
+    status: 'ACTIVE',
+    approvalStatus: 'APPROVED',
+  })
+    .select('_id')
+    .lean();
+  return !!r;
+}
+
 /**
  * GET /api/public/restaurants
  * Tìm kiếm và liệt kê nhà hàng với bộ lọc và phân trang
@@ -100,7 +113,7 @@ const getRestaurants = async (req, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10));
     const skip = (pageNum - 1) * limitNum;
 
-    const filter = { status: 'ACTIVE' };
+    const filter = { status: 'ACTIVE', approvalStatus: 'APPROVED' };
 
     if (search) {
       filter.name = { $regex: search, $options: 'i' };
@@ -188,7 +201,7 @@ const getRestaurants = async (req, res) => {
 
 /**
  * GET /api/public/restaurants/:id
- * Xem chi tiết một nhà hàng (chỉ ACTIVE)
+ * Xem chi tiết một nhà hàng (ACTIVE + đã duyệt)
  */
 const getRestaurantById = async (req, res) => {
   try {
@@ -206,6 +219,7 @@ const getRestaurantById = async (req, res) => {
     const restaurant = await Restaurant.findOne({
       _id: id,
       status: 'ACTIVE',
+      approvalStatus: 'APPROVED',
     }).lean();
 
     if (!restaurant) {
@@ -214,7 +228,6 @@ const getRestaurantById = async (req, res) => {
         message: 'Nhà hàng không tìm thấy',
       });
     }
-
 
     const hallsRaw = await Hall.find({
       restaurantId: id,
@@ -272,6 +285,7 @@ const getHallsByRestaurant = async (req, res) => {
     const restaurant = await Restaurant.findOne({
       _id: id,
       status: 'ACTIVE',
+      approvalStatus: 'APPROVED',
     }).lean();
 
     if (!restaurant) {
@@ -281,13 +295,11 @@ const getHallsByRestaurant = async (req, res) => {
       });
     }
 
-   
     const filter = {
       restaurantId: id,
       isDeleted: false,
     };
 
-    
     let halls = await Hall.find(filter).lean();
 
    
@@ -328,7 +340,10 @@ const getAllPublicHalls = async (req, res) => {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const skip = (pageNum - 1) * limitNum;
 
-    const activeIds = await Restaurant.find({ status: 'ACTIVE' }).distinct('_id');
+    const activeIds = await Restaurant.find({
+      status: 'ACTIVE',
+      approvalStatus: 'APPROVED',
+    }).distinct('_id');
     if (!activeIds.length) {
       return res.json({
         success: true,
@@ -404,6 +419,7 @@ const getServicesByRestaurant = async (req, res) => {
     const restaurant = await Restaurant.findOne({
       _id: id,
       status: 'ACTIVE',
+      approvalStatus: 'APPROVED',
     }).lean();
 
     if (!restaurant) {
@@ -413,7 +429,6 @@ const getServicesByRestaurant = async (req, res) => {
       });
     }
 
-   
     const filter = {
       restaurantId: id,
       isDeleted: false,
@@ -477,6 +492,13 @@ const getHallAvailability = async (req, res) => {
     
     const hall = await Hall.findById(id).lean();
     if (!hall || hall.isDeleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sảnh không tìm thấy',
+      });
+    }
+
+    if (!(await isRestaurantOnPublicChannel(hall.restaurantId))) {
       return res.status(404).json({
         success: false,
         message: 'Sảnh không tìm thấy',
@@ -551,6 +573,13 @@ const getHallAvailabilityRange = async (req, res) => {
 
     const hall = await Hall.findById(id).lean();
     if (!hall || hall.isDeleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sảnh không tìm thấy',
+      });
+    }
+
+    if (!(await isRestaurantOnPublicChannel(hall.restaurantId))) {
       return res.status(404).json({
         success: false,
         message: 'Sảnh không tìm thấy',

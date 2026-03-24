@@ -1,87 +1,57 @@
+import React, { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { AuthContext } from '../contexts/AuthContext';
+import { User, LogOut } from 'lucide-react';
 
-/**
- * Header app (sau đăng nhập): logo + tên + đăng xuất.
- */
-function Header() {
+const Header = () => {
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
-    navigate('/login', { replace: true });
+    navigate('/');
   };
 
   return (
-    <header className="app-header">
-      <div className="container app-header__inner">
-        <Link to="/" className="app-header__brand">
-          <span className="app-header__brand-icon" aria-hidden>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2L4 6v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V6l-8-4z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          Vows &amp; Venues
-        </Link>
-        <nav className="app-header__nav">
-          {user && (
-            <>
-              {user.role === 'VENDOR' && (
-                <Link
-                  to="/vendor/venues"
-                  style={{ marginRight: '0.75rem', fontSize: '0.9rem', color: '#38bdf8' }}
-                >
-                  Khu vendor
-                </Link>
-              )}
-              {user.role === 'CUSTOMER' && (
-                <>
-                  <Link
-                    to="/"
-                    style={{ marginRight: '0.65rem', fontSize: '0.9rem', color: '#7dd3fc' }}
-                  >
-                    Trang chủ
-                  </Link>
-                  <Link
-                    to="/my-bookings"
-                    style={{ marginRight: '0.65rem', fontSize: '0.9rem', color: '#7dd3fc' }}
-                  >
-                    Booking
-                  </Link>
-                  <Link
-                    to="/profile"
-                    style={{ marginRight: '0.75rem', fontSize: '0.9rem', color: '#7dd3fc' }}
-                  >
-                    Hồ sơ
-                  </Link>
-                </>
-              )}
-              {user.role === 'ADMIN' && (
-                <Link
-                  to="/admin/dashboard"
-                  style={{ marginRight: '0.75rem', fontSize: '0.9rem', color: '#a78bfa' }}
-                >
-                  Admin
-                </Link>
-              )}
-              <span className="app-header__user">
-                {user.fullName || user.email}
-              </span>
-              <button type="button" className="app-header__logout" onClick={handleLogout}>
-                Đăng xuất
-              </button>
-            </>
+    <header className="header-glass">
+      <div className="container d-flex justify-between align-center" style={{ height: '70px' }}>
+        <Link to="/" className="brand-logo" style={{ fontSize: '2rem', marginBottom: 0 }}>Lumina</Link>
+        
+        <nav className="d-flex align-center gap-4 text-muted" style={{ fontWeight: 500 }}>
+          <Link to="/" className="nav-item-lite hover-primary">Venues</Link>
+          {user?.role === 'CUSTOMER' && (
+            <Link to="/profile/bookings" className="nav-item-lite hover-primary">Đặt chỗ của tôi</Link>
           )}
         </nav>
+
+        <div className="d-flex align-center gap-3">
+          {user ? (
+            <div className="user-dropdown" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div className="text-right" style={{ lineHeight: '1.2' }}>
+                <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{user.fullName}</div>
+                <div style={{ fontSize: '0.8rem' }}>{user.role}</div>
+              </div>
+              <div 
+                className="avatar-placeholder" 
+                style={{ cursor: 'pointer' }}
+                onClick={() => navigate(user.role === 'ADMIN' ? '/admin/dashboard' : user.role === 'VENDOR' ? '/vendor/dashboard' : '/profile')}
+              >
+                {user.fullName.charAt(0)}
+              </div>
+              <button onClick={handleLogout} className="btn btn-ghost" style={{ padding: '0.5rem' }} title="Logout">
+                <LogOut size={18} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link to="/login" className="btn btn-ghost text-primary">Login</Link>
+              <Link to="/register" className="btn btn-primary">Get Started</Link>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );
-}
+};
 
 export default Header;

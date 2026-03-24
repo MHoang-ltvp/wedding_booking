@@ -1,71 +1,97 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+import AuthLayout from './layouts/AuthLayout';
+import MainLayout from './layouts/MainLayout';
+import AdminLayout from './layouts/AdminLayout';
+import VendorLayout from './layouts/VendorLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import CustomerRoute from './components/CustomerRoute';
-import VendorRoute from './components/VendorRoute';
-import AdminRoute from './components/AdminRoute';
-import CustomerLayout from './layouts/CustomerLayout';
-import VendorLayout from './layouts/VendorLayout';
-import AdminLayout from './layouts/AdminLayout';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import VenuePublicDetail from './pages/VenuePublicDetail';
-import BookVenue from './pages/BookVenue';
-import MyBookings from './pages/MyBookings';
-import CustomerBookingDetail from './pages/CustomerBookingDetail';
-import Profile from './pages/Profile';
-import VendorVenues from './pages/vendor/VendorVenues';
-import VendorVenueDetail from './pages/vendor/VendorVenueDetail';
-import VendorBookings from './pages/vendor/VendorBookings';
-import VendorAnalytics from './pages/vendor/VendorAnalytics';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminRestaurants from './pages/admin/AdminRestaurants';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminBookings from './pages/admin/AdminBookings';
 
-function App() {
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import Profile from './pages/shared/Profile';
+import UserManagement from './pages/admin/UserManagement';
+import RestaurantApproval from './pages/admin/RestaurantApproval';
+import AdminRestaurantReview from './pages/admin/AdminRestaurantReview';
+import RestaurantProfile from './pages/vendor/RestaurantProfile';
+import VendorRestaurantList from './pages/vendor/VendorRestaurantList';
+import HallsManagement from './pages/vendor/HallsManagement';
+import ServicesManagement from './pages/vendor/ServicesManagement';
+import Home from './pages/public/Home';
+import RestaurantDetail from './pages/public/RestaurantDetail';
+import CreateBooking from './pages/customer/CreateBooking';
+import MyBookings from './pages/customer/MyBookings';
+import BookingManagement from './pages/vendor/BookingManagement';
+import SystemBookings from './pages/admin/SystemBookings';
+import BookingDetail from './pages/customer/BookingDetail';
+import DashboardAdmin from './pages/admin/DashboardAdmin';
+import DashboardVendor from './pages/vendor/DashboardVendor';
+
+const App = () => {
   return (
-    <AuthProvider>
+    <BrowserRouter>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route element={<ProtectedRoute />}>
-          <Route element={<CustomerRoute />}>
-            <Route element={<CustomerLayout />}>
-              <Route index element={<Home />} />
-              <Route path="browse" element={<Navigate to="/" replace />} />
-              <Route path="venues/:restaurantId/book" element={<BookVenue />} />
-              <Route path="venues/:restaurantId" element={<VenuePublicDetail />} />
-              <Route path="my-bookings" element={<MyBookings />} />
-              <Route path="bookings/:bookingId" element={<CustomerBookingDetail />} />
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<Home />} />
+          <Route path="restaurant/:id" element={<RestaurantDetail />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route element={<CustomerRoute />}>
+              <Route path="book/:restaurantId" element={<CreateBooking />} />
               <Route path="profile" element={<Profile />} />
-            </Route>
-          </Route>
-          <Route path="/vendor" element={<VendorRoute />}>
-            <Route element={<VendorLayout />}>
-              <Route index element={<Navigate to="/vendor/venues" replace />} />
-              <Route path="venues" element={<VendorVenues />} />
-              <Route path="venues/:restaurantId" element={<VendorVenueDetail />} />
-              <Route path="bookings" element={<VendorBookings />} />
-              <Route path="analytics" element={<VendorAnalytics />} />
-              <Route path="profile" element={<Profile />} />
-            </Route>
-          </Route>
-          <Route path="/admin" element={<AdminRoute />}>
-            <Route element={<AdminLayout />}>
-              <Route index element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="restaurants" element={<AdminRestaurants />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="bookings" element={<AdminBookings />} />
+              <Route path="profile/bookings" element={<MyBookings />} />
+              <Route path="profile/bookings/:id" element={<BookingDetail />} />
             </Route>
           </Route>
         </Route>
+
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Route>
+
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardAdmin />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="restaurants/:id" element={<AdminRestaurantReview />} />
+          <Route path="restaurants" element={<RestaurantApproval />} />
+          <Route path="bookings" element={<SystemBookings />} />
+          <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+        </Route>
+
+        <Route path="/vendor" element={<VendorLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardVendor />} />
+          <Route path="restaurant" element={<Navigate to="/vendor/restaurants" replace />} />
+          <Route path="restaurants" element={<VendorRestaurantList />} />
+          <Route path="restaurants/:restaurantId" element={<RestaurantProfile />} />
+          <Route path="halls" element={<HallsManagement />} />
+          <Route path="services" element={<ServicesManagement />} />
+          <Route path="bookings" element={<BookingManagement />} />
+          <Route path="*" element={<Navigate to="/vendor/dashboard" replace />} />
+        </Route>
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </AuthProvider>
+    </BrowserRouter>
   );
-}
+};
 
 export default App;

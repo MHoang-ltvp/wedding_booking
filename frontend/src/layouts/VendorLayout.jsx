@@ -1,150 +1,128 @@
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import '../styles/vendor.css';
+import React, { useContext } from 'react';
+import { NavLink, Outlet, Navigate, useLocation } from 'react-router-dom';
+import { AuthContext } from '../contexts/AuthContext';
+import { VendorRestaurantProvider, useVendorRestaurant } from '../contexts/VendorRestaurantContext';
+import { Building2, Utensils, ClipboardList, LogOut, BarChart3, PartyPopper } from 'lucide-react';
 import '../styles/role-shell.css';
 
-function IconVenues() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M4 21V10M4 21h16M4 21H2M4 10l8-7 8 7M9 21v-6h6v6"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+function VendorShell() {
+  const { pathname } = useLocation();
+  const { user, logout } = useContext(AuthContext);
+  const { restaurants, selectedRestaurantId, selectedRestaurant, setSelectedRestaurantId, loading } =
+    useVendorRestaurant();
 
-function IconCalendar() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M16 3v4M8 3v4M3 11h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconChart() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M4 19V5M9 19v-6M14 19V9M19 19v-9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconUser() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="9" r="3.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M5 20v-1a7 7 0 0114 0v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-const NAV = [
-  {
-    to: '/vendor/venues',
-    label: 'Nhà hàng',
-    icon: IconVenues,
-    active: (p) => p.startsWith('/vendor/venues'),
-  },
-  {
-    to: '/vendor/bookings',
-    label: 'Đặt chỗ',
-    icon: IconCalendar,
-    active: (p) => p.startsWith('/vendor/bookings'),
-  },
-  {
-    to: '/vendor/analytics',
-    label: 'Thống kê',
-    icon: IconChart,
-    active: (p) => p.startsWith('/vendor/analytics'),
-  },
-  {
-    to: '/vendor/profile',
-    label: 'Thông tin cá nhân',
-    icon: IconUser,
-    active: (p) => p.startsWith('/vendor/profile'),
-  },
-];
-
-function VendorLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const path = location.pathname;
-  const { user, logout } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
+  const navItems = [
+    { name: 'Tổng quan', path: '/vendor/dashboard', icon: <BarChart3 size={20} /> },
+    { name: 'Nhà hàng', path: '/vendor/restaurants', icon: <Building2 size={20} /> },
+    { name: 'Sảnh', path: '/vendor/halls', icon: <PartyPopper size={20} /> },
+    { name: 'Dịch vụ & menu', path: '/vendor/services', icon: <Utensils size={20} /> },
+    { name: 'Đặt chỗ', path: '/vendor/bookings', icon: <ClipboardList size={20} /> },
+  ];
 
   return (
-    <div className="vendor-app role-shell role-shell--vendor">
-      <aside className="vendor-sidebar">
-        <div className="vendor-sidebar__top">
-          <div className="vendor-sidebar__brand">
-            <span className="vendor-sidebar__logo" aria-hidden>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 2L4 6v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V6l-8-4z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <div>
-              <div className="vendor-sidebar__title">Vows &amp; Venues</div>
-              <div className="vendor-sidebar__tagline vendor-sidebar__tagline--caps">
-                Quản lý nhà hàng
-              </div>
-            </div>
-          </div>
-
-          <div className="role-badge role-badge--vendor">Vendor</div>
-
-          <div className="vendor-sidebar__user">
-            <div className="vendor-sidebar__avatar" aria-hidden>
-              {(user?.fullName || user?.email || '?').charAt(0).toUpperCase()}
-            </div>
-            <div className="vendor-sidebar__user-text">
-              <span className="vendor-sidebar__user-name">{user?.fullName || 'Vendor'}</span>
-              <span className="vendor-sidebar__user-role">Chủ sạp</span>
-            </div>
-          </div>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <h2>
+            Lumina
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginLeft: '10px' }}>VENDOR</span>
+          </h2>
         </div>
 
-        <nav className="vendor-sidebar__nav" aria-label="Menu vendor">
-          {NAV.map(({ to, label, icon: Icon, active }) => {
-            const isActive = active(path);
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={`vendor-nav-link${isActive ? ' vendor-nav-link--active' : ''}`}
-              >
-                <Icon />
-                {label}
-              </Link>
-            );
-          })}
+        {!loading && restaurants.length > 0 && (
+          <div style={{ padding: '0 1rem 1rem', borderBottom: '1px solid var(--border, #eee)' }}>
+            <label
+              className="text-muted"
+              style={{ display: 'block', fontSize: '0.75rem', marginBottom: '0.35rem', fontWeight: 600 }}
+            >
+      Nhà hàng đang quản lý
+            </label>
+            <select
+              className="input-field"
+              style={{ width: '100%', fontSize: '0.85rem', padding: '0.5rem' }}
+              value={selectedRestaurantId || ''}
+              onChange={(e) => setSelectedRestaurantId(e.target.value || null)}
+            >
+              {restaurants.map((r) => (
+                <option key={r._id} value={r._id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            {selectedRestaurant && (
+              <p className="text-muted" style={{ fontSize: '0.72rem', marginTop: '0.5rem', lineHeight: 1.35 }}>
+                Sảnh, thực đơn/trang trí và đặt chỗ lọc theo nhà hàng này.
+              </p>
+            )}
+          </div>
+        )}
+
+        <nav className="sidebar-nav">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => {
+                const restaurantsSection =
+                  item.path === '/vendor/restaurants' &&
+                  (pathname === '/vendor/restaurants' || pathname.startsWith('/vendor/restaurants/'));
+                const active = isActive || restaurantsSection;
+                return `nav-item ${active ? 'active' : ''}`;
+              }}
+            >
+              {item.icon}
+              <span>{item.name}</span>
+            </NavLink>
+          ))}
         </nav>
 
-        <div className="vendor-sidebar__footer">
-          <button type="button" className="vendor-logout" onClick={handleLogout}>
-            Đăng xuất
+        <div className="sidebar-footer">
+          <div className="user-mini-profile mb-3" style={{ marginBottom: '1rem' }}>
+            <div className="avatar-placeholder">{user.fullName.charAt(0)}</div>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user.fullName}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Vendor</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={logout}
+            className="btn btn-ghost full-width"
+            style={{ justifyContent: 'flex-start', padding: '0.5rem' }}
+          >
+            <LogOut size={18} /> Đăng xuất
           </button>
         </div>
       </aside>
 
-      <div className="vendor-main">
-        <Outlet />
-      </div>
+      <main className="main-content">
+        <div className="content-area">
+          <Outlet />
+        </div>
+      </main>
     </div>
   );
 }
+
+const VendorLayout = () => {
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <p className="text-muted">Đang tải…</p>
+      </div>
+    );
+  }
+  if (!user || user.role !== 'VENDOR') {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <VendorRestaurantProvider>
+      <VendorShell />
+    </VendorRestaurantProvider>
+  );
+};
 
 export default VendorLayout;

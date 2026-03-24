@@ -13,5 +13,6 @@ frontend/node_modules/
 
 # Build & cache
 frontend/dist/
+frontend/build_*.txt
 *.log
 .DS_Store

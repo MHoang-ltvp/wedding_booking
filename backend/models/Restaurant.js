@@ -17,6 +17,7 @@ const restaurantSchema = new mongoose.Schema(
       districtName: { type: String, default: '' },
       wardCode: { type: String, default: '' },
       wardName: { type: String, default: '' },
+      /** Một khối: số nhà + đường/phố/ngõ (nội dung tự do) */
       street: { type: String, default: '' },
     },
     description: { type: String },
@@ -37,6 +38,8 @@ const restaurantSchema = new mongoose.Schema(
       default: 'DRAFT',
       index: true,
     },
+    /** Lý do từ chối do admin gửi (khi approvalStatus = REJECTED) */
+    rejectionReason: { type: String, default: '' },
     status: {
       type: String,
       enum: ['ACTIVE', 'HIDDEN'],

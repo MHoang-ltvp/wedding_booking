@@ -10,6 +10,7 @@ const mongoose = require("mongoose");
 const Restaurant = require("../models/Restaurant");
 const Hall = require("../models/Hall");
 const ServicePackage = require("../models/ServicePackage");
+const Booking = require("../models/Booking");
 
 const isNonEmptyString = (value) =>
   typeof value === "string" && value.trim().length > 0;
@@ -17,7 +18,9 @@ const isNonEmptyString = (value) =>
 const normalizeContact = (contact = {}) => {
   if (!contact || typeof contact !== "object") return undefined;
   const result = {};
-  if (typeof contact.name === "string") result.name = contact.name.trim();
+  /** Không còn nhập tên/bộ phận trên form — luôn lưu rỗng để xóa dữ liệu cũ khi cập nhật */
+  result.name =
+    typeof contact.name === "string" ? contact.name.trim() : "";
   if (typeof contact.phone === "string") result.phone = contact.phone.trim();
   if (typeof contact.email === "string")
     result.email = contact.email.trim().toLowerCase();
@@ -26,13 +29,13 @@ const normalizeContact = (contact = {}) => {
 
 const normalizeAddressDetail = (addressDetail = {}) => {
   if (!addressDetail || typeof addressDetail !== "object") return null;
-  const provinceCode = String(addressDetail.provinceCode || "").trim();
-  const provinceName = String(addressDetail.provinceName || "").trim();
-  const districtCode = String(addressDetail.districtCode || "").trim();
-  const districtName = String(addressDetail.districtName || "").trim();
-  const wardCode = String(addressDetail.wardCode || "").trim();
-  const wardName = String(addressDetail.wardName || "").trim();
-  const street = String(addressDetail.street || "").trim();
+  const provinceCode = String(addressDetail.provinceCode ?? "").trim();
+  const provinceName = String(addressDetail.provinceName ?? "").trim();
+  const districtCode = String(addressDetail.districtCode ?? "").trim();
+  const districtName = String(addressDetail.districtName ?? "").trim();
+  const wardCode = String(addressDetail.wardCode ?? "").trim();
+  const wardName = String(addressDetail.wardName ?? "").trim();
+  const street = String(addressDetail.street ?? "").trim();
   if (
     !provinceCode ||
     !provinceName ||
@@ -55,8 +58,10 @@ const normalizeAddressDetail = (addressDetail = {}) => {
   };
 };
 
-const buildFullAddress = (detail) =>
-  `${detail.street}, ${detail.wardName}, ${detail.districtName}, ${detail.provinceName}`;
+const buildFullAddress = (detail) => {
+  const line1 = String(detail.street ?? "").trim();
+  return `${line1}, ${detail.wardName}, ${detail.districtName}, ${detail.provinceName}`;
+};
 
 // POST /api/vendor/restaurants - Tạo một hồ sơ nhà hàng mới
 const create = async (req, res) => {
@@ -91,7 +96,7 @@ const create = async (req, res) => {
         .json({
           success: false,
           message:
-            "Thiếu name hoặc địa chỉ. Hãy chọn tỉnh/quận/phường và nhập số nhà/đường.",
+            "Thiếu name hoặc địa chỉ. Hãy chọn tỉnh/quận/phường và nhập tên đường (số nhà nên điền đầy đủ).",
         });
     }
 
@@ -185,7 +190,7 @@ const update = async (req, res) => {
         return res.status(400).json({
           success: false,
           message:
-            "addressDetail không hợp lệ. Cần đủ tỉnh/quận/phường và số nhà/đường.",
+            "addressDetail không hợp lệ. Cần đủ tỉnh/quận/phường và tên đường (số nhà khuyến nghị có).",
         });
       }
       updates.addressDetail = normalizedAddressDetail;
@@ -395,10 +400,12 @@ const getAdminRestaurants = async (req, res) => {
 };
 
 // PUT /api/admin/restaurants/:id/approval — Duyệt / từ chối hồ sơ nhà hàng
+const MAX_REJECTION_REASON_LEN = 2000;
+
 const setAdminRestaurantApproval = async (req, res) => {
   try {
     const { id } = req.params;
-    const { approvalStatus } = req.body || {};
+    const { approvalStatus, rejectionReason } = req.body || {};
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res
@@ -412,9 +419,24 @@ const setAdminRestaurantApproval = async (req, res) => {
       });
     }
 
+    const update = { approvalStatus };
+    if (approvalStatus === "REJECTED") {
+      const text =
+        typeof rejectionReason === "string" ? rejectionReason.trim() : "";
+      if (text.length > MAX_REJECTION_REASON_LEN) {
+        return res.status(400).json({
+          success: false,
+          message: `Lý do từ chối tối đa ${MAX_REJECTION_REASON_LEN} ký tự.`,
+        });
+      }
+      update.rejectionReason = text;
+    } else {
+      update.rejectionReason = "";
+    }
+
     const restaurant = await Restaurant.findByIdAndUpdate(
       id,
-      { approvalStatus },
+      update,
       { new: true },
     ).populate("vendorId", "email fullName phone role");
 
@@ -577,6 +599,7 @@ const submitForApproval = async (req, res) => {
     }
 
     restaurant.approvalStatus = "PENDING";
+    restaurant.rejectionReason = "";
     await restaurant.save();
 
     return res.json({
@@ -592,13 +615,112 @@ const submitForApproval = async (req, res) => {
   }
 };
 
+// PUT /api/vendor/restaurants/:id/withdraw-approval — Thu hồi hồ sơ đang chờ duyệt (PENDING → DRAFT) để chỉnh sửa
+const withdrawApproval = async (req, res) => {
+  try {
+    const vendorId = req.user?._id;
+    if (!vendorId) {
+      return res.status(401).json({ success: false, message: "Vui lòng đăng nhập." });
+    }
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "ID nhà hàng không hợp lệ." });
+    }
+
+    const restaurant = await Restaurant.findOne({ _id: id, vendorId });
+    if (!restaurant) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy nhà hàng." });
+    }
+    if (restaurant.approvalStatus !== "PENDING") {
+      return res.status(409).json({
+        success: false,
+        message: "Chỉ thu hồi được khi hồ sơ đang chờ duyệt.",
+      });
+    }
+
+    restaurant.approvalStatus = "DRAFT";
+    restaurant.rejectionReason = "";
+    await restaurant.save();
+
+    return res.json({
+      success: true,
+      message: "Đã thu hồi hồ sơ. Bạn có thể chỉnh sửa và gửi duyệt lại.",
+      restaurant,
+    });
+  } catch (err) {
+    console.error("restaurant.withdrawApproval:", err);
+    return res.status(500).json({ success: false, message: "Lỗi thu hồi hồ sơ." });
+  }
+};
+
+/**
+ * DELETE /api/vendor/restaurants/:id — Xóa nhà hàng (chỉ của vendor), khi chưa có booking nào.
+ */
+const remove = async (req, res) => {
+  try {
+    const vendorId = req.user?._id;
+    if (!vendorId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Vui lòng đăng nhập." });
+    }
+
+    const restaurantId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Restaurant id không hợp lệ." });
+    }
+
+    const owned = await Restaurant.findOne({ _id: restaurantId, vendorId });
+    if (!owned) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy nhà hàng của bạn.",
+      });
+    }
+
+    const bookingCount = await Booking.countDocuments({ restaurantId });
+    if (bookingCount > 0) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Không thể xóa nhà hàng đã có lịch đặt chỗ. Hủy hoàn tất các booking trước hoặc liên hệ admin.",
+      });
+    }
+
+    await Hall.updateMany(
+      { restaurantId, isDeleted: false },
+      { $set: { isDeleted: true } },
+    );
+    await ServicePackage.updateMany(
+      { restaurantId, isDeleted: false },
+      { $set: { isDeleted: true } },
+    );
+    await Restaurant.deleteOne({ _id: restaurantId, vendorId });
+
+    return res.json({
+      success: true,
+      message: "Đã xóa nhà hàng.",
+    });
+  } catch (err) {
+    console.error("restaurant.remove error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi xóa nhà hàng." });
+  }
+};
+
 module.exports = {
   create,
   update,
+  remove,
   getMyRestaurant,
   getById,
   getAdminRestaurantById,
   submitForApproval,
+  withdrawApproval,
   getAdminRestaurants,
   setAdminRestaurantApproval,
 };

@@ -15,7 +15,9 @@ vendorRestaurantRouter.get('/me', restaurantController.getMyRestaurant);
 vendorRestaurantRouter.get('/:id', restaurantController.getById);
 vendorRestaurantRouter.post('/', restaurantController.create);
 vendorRestaurantRouter.put('/:id/submit-approval', restaurantController.submitForApproval);
+vendorRestaurantRouter.put('/:id/withdraw-approval', restaurantController.withdrawApproval);
 vendorRestaurantRouter.put('/:id', restaurantController.update);
+vendorRestaurantRouter.delete('/:id', restaurantController.remove);
 
 // Router cho /api/admin/restaurants
 const adminRestaurantRouter = express.Router();

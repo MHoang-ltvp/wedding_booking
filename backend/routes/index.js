@@ -20,11 +20,15 @@ const {
   vendorStatsRouter,
   adminStatsRouter,
 } = require('./integration.routes');
+const addressRoutes = require('./address.routes');
 
 const router = express.Router();
 
 // ---- Auth (public) ----
 router.use('/auth', authRoutes);
+
+// ---- Địa chỉ VN (public, chỉ đọc) ----
+router.use('/address', addressRoutes);
 
 // ---- Public (guest/customer) ----
 router.use('/public', publicRoutes);

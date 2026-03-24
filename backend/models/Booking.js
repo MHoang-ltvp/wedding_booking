@@ -22,9 +22,10 @@ const bookingSchema = new mongoose.Schema(
     cancelReason: { type: String },
     rejectReason: { type: String },
     estimatedTotal: { type: Number, required: true },
-    depositRequired: { type: Number },
-    /** Khách bấm “Thanh toán” — không qua cổng thanh toán riêng */
-    depositPaid: { type: Boolean, default: false },
+    /** Nhà hàng đã đồng ý nhận booking; sau đó khách mới được thanh toán */
+    vendorAccepted: { type: Boolean, default: false },
+    /** Khách xác nhận đã thanh toán trọn gói một lần (mock), bằng estimatedTotal */
+    paidInFull: { type: Boolean, default: false },
     paidAt: { type: Date },
     finalAmount: { type: Number },
     status: {
