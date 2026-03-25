@@ -30,14 +30,14 @@ const DashboardVendor = () => {
     }
   };
 
-  if (loading) return <div style={{ padding: '3rem', textAlign: 'center' }}>Loading dashboard...</div>;
+  if (loading) return <div style={{ padding: '3rem', textAlign: 'center' }}>Đang tải bảng điều khiển…</div>;
 
   return (
     <div className="fade-in">
       <div className="page-header d-flex justify-between align-center">
-        <h1 className="page-title">Vendor Overview</h1>
+        <h1 className="page-title">Tổng quan đối tác</h1>
         <Link to="/vendor/bookings" className="btn btn-outline">
-          <Eye size={16} /> View All Bookings
+          <Eye size={16} /> Xem tất cả đặt chỗ
         </Link>
       </div>
 
@@ -47,7 +47,7 @@ const DashboardVendor = () => {
             <Calendar size={28} />
           </div>
           <div>
-            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Total Bookings</div>
+            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Tổng đặt chỗ</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats?.totalBookings || 0}</div>
           </div>
         </div>
@@ -57,7 +57,7 @@ const DashboardVendor = () => {
             <DollarSign size={28} />
           </div>
           <div>
-            <div className="text-muted" style={{ fontSize: '0.9rem', whiteSpace: 'nowrap' }}>Est. Revenue (VNĐ)</div>
+            <div className="text-muted" style={{ fontSize: '0.9rem', whiteSpace: 'nowrap' }}>Doanh thu ước tính (VNĐ)</div>
             <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#065f46' }}>
               {new Intl.NumberFormat('vi-VN').format(stats?.totalRevenue || 0)}
             </div>
@@ -69,7 +69,7 @@ const DashboardVendor = () => {
             <Target size={28} />
           </div>
           <div>
-            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Pending Action</div>
+            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Cần xử lý</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#92400e' }}>{stats?.pendingBookings || 0}</div>
           </div>
         </div>
@@ -79,7 +79,7 @@ const DashboardVendor = () => {
             <TrendingUp size={28} />
           </div>
           <div>
-            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Completed Events</div>
+            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Sự kiện đã hoàn thành</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats?.completedEvents || 0}</div>
           </div>
         </div>
@@ -87,17 +87,17 @@ const DashboardVendor = () => {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="card" style={{ height: '300px', display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Revenue Trend</h3>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Xu hướng doanh thu</h3>
           <div style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-            <p>Advanced charting module initializing...</p>
+            <p>Biểu đồ sẽ có trong bản cập nhật sau.</p>
           </div>
         </div>
 
         <div className="card" style={{ height: '300px', display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Quick Actions</h3>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Thao tác nhanh</h3>
           <div className="d-flex flex-col gap-3">
             <Link to="/vendor/restaurants" className="btn btn-outline full-width" style={{ justifyContent: 'flex-start' }}><Store size={18} /> Quản lý nhà hàng</Link>
-            <Link to="/vendor/bookings" className="btn btn-primary full-width" style={{ justifyContent: 'flex-start' }}><Calendar size={18} /> Manage Pending Bookings</Link>
+            <Link to="/vendor/bookings" className="btn btn-primary full-width" style={{ justifyContent: 'flex-start' }}><Calendar size={18} /> Quản lý đặt chỗ chờ xử lý</Link>
           </div>
         </div>
       </div>

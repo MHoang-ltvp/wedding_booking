@@ -1,13 +1,12 @@
-import React, { useRef, useId, useEffect } from 'react';
+import React, { useId } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, UploadCloud, Loader2 } from 'lucide-react';
+import { UploadCloud, Loader2 } from 'lucide-react';
 
 /**
  * Cột gallery 2 cột + ô upload dashed — dùng chung form có ảnh.
  */
 export default function MediaGalleryPanel({
   title = 'Thư viện ảnh',
-  addLabel = 'Thêm ảnh',
   images = [],
   resolveUrl = (img) => (typeof img === 'string' ? img : img?.url || ''),
   onRemove,
@@ -16,13 +15,7 @@ export default function MediaGalleryPanel({
   uploadCaption = 'UPLOAD',
   uploadHint,
 }) {
-  const inputRef = useRef(null);
   const fileInputId = useId();
-
-  const triggerPick = () => {
-    if (uploading) return;
-    inputRef.current?.click();
-  };
 
   const onInputChange = (e) => {
     onFileChange?.(e);
@@ -52,19 +45,9 @@ export default function MediaGalleryPanel({
       {blockingOverlay}
       <div className="media-gallery__head">
         <h3 className="media-gallery__title">{title}</h3>
-        <button
-          type="button"
-          className="media-gallery__add"
-          onClick={triggerPick}
-          disabled={uploading}
-        >
-          <Camera size={16} strokeWidth={2} />
-          {addLabel}
-        </button>
       </div>
       <input
         id={fileInputId}
-        ref={inputRef}
         type="file"
         multiple
         accept="image/*"

@@ -38,6 +38,12 @@ GET http://localhost:9999/api/public/halls/[ID_SANH]/availability?date=2026-10-2
 
 const mongoose = require('mongoose');
 const { Restaurant, Hall, ServicePackage, Booking } = require('../models');
+const {
+  ymdLocal,
+  todayYmdLocal,
+  parseYmdLocal,
+  computeHallAvailabilitySlots,
+} = require('../utils/hallAvailabilityRange');
 
 /** Thêm coverImage (URL ảnh đầu) để client hiển thị không cần parse images[] */
 function hallWithCover(h) {
@@ -56,24 +62,6 @@ function serviceWithCover(s) {
     ...s,
     coverImage: imgs[0]?.url || null,
   };
-}
-
-/** Ngày theo giờ local (server), YYYY-MM-DD */
-function ymdLocal(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function todayYmdLocal() {
-  return ymdLocal(new Date());
-}
-
-function parseYmdLocal(ymd) {
-  if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
-  const [y, mo, d] = ymd.split('-').map(Number);
-  return new Date(y, mo - 1, d, 0, 0, 0, 0);
 }
 
 /** Trạng thái booking chiếm slot — khớp booking.controller create */
@@ -586,56 +574,15 @@ const getHallAvailabilityRange = async (req, res) => {
       });
     }
 
-    const days = Math.min(31, Math.max(1, parseInt(daysQ, 10) || 14));
-    const today = parseYmdLocal(todayYmdLocal());
-    let start = fromQ && parseYmdLocal(fromQ) ? parseYmdLocal(fromQ) : today;
-    if (start < today) start = today;
-
-    const fromStr = ymdLocal(start);
-    const endLast = new Date(start);
-    endLast.setDate(endLast.getDate() + days - 1);
-    const rangeEnd = new Date(
-      endLast.getFullYear(),
-      endLast.getMonth(),
-      endLast.getDate(),
-      23,
-      59,
-      59,
-      999,
-    );
-
-    const bookings = await Booking.find({
-      hallId: id,
-      bookingDate: { $gte: start, $lte: rangeEnd },
-      status: BOOKING_STATUSES_BLOCKING,
-    })
-      .select('bookingDate shift')
-      .lean();
-
-    const takenByDate = new Map();
-    for (const b of bookings) {
-      const key = ymdLocal(new Date(b.bookingDate));
-      if (!takenByDate.has(key)) takenByDate.set(key, new Set());
-      takenByDate.get(key).add(b.shift);
-    }
-
-    const hallOk = hall.status === 'AVAILABLE' && !hall.isDeleted;
-    const slots = [];
-    for (let i = 0; i < days; i += 1) {
-      const d = new Date(start);
-      d.setDate(d.getDate() + i);
-      const dateStr = ymdLocal(d);
-      const taken = takenByDate.get(dateStr) || new Set();
-      slots.push({
-        date: dateStr,
-        availability: {
-          MORNING: { available: hallOk && !taken.has('MORNING') },
-          EVENING: { available: hallOk && !taken.has('EVENING') },
-        },
+    /** Cổng khách: khớp quy tắc đặt chỗ — tối đa 14 ngày từ hôm nay */
+    const { from: fromStr, to: toStr, days, slots, hallBookable: hallOk } =
+      await computeHallAvailabilitySlots({
+        hallId: id,
+        hall,
+        fromQ,
+        daysQ,
+        maxDays: 14,
       });
-    }
-
-    const toStr = slots.length ? slots[slots.length - 1].date : fromStr;
 
     res.json({
       success: true,

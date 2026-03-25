@@ -32,7 +32,7 @@ const MainLayout = () => {
         <Outlet />
       </main>
       <footer className="footer" style={{ padding: '2rem 0', backgroundColor: 'var(--surface)', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
-        <p className="text-muted">&copy; {new Date().getFullYear()} Lumina. All rights reserved.</p>
+        <p className="text-muted">&copy; {new Date().getFullYear()} Lumina. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
   );

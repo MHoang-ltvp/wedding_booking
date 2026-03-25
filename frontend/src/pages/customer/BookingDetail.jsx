@@ -10,6 +10,28 @@ import {
   amountDueFull,
 } from '../../shared/bookingPayment';
 
+function labelBookingStatus(status) {
+  const m = {
+    PENDING: 'Chờ xử lý',
+    COMPLETED: 'Hoàn thành',
+    CANCELLED: 'Đã hủy',
+    REJECTED: 'Từ chối',
+  };
+  return m[status] || status;
+}
+
+function labelShift(shift) {
+  if (shift === 'MORNING') return 'Ca sáng';
+  if (shift === 'EVENING') return 'Ca tối';
+  return shift;
+}
+
+function labelServiceType(t) {
+  if (t === 'FOOD') return 'Ẩm thực';
+  if (t === 'DECORATION') return 'Trang trí';
+  return t;
+}
+
 const BookingDetail = () => {
   const { id } = useParams();
   const [booking, setBooking] = useState(null);
@@ -53,53 +75,53 @@ const BookingDetail = () => {
     }
   };
 
-  if (loading) return <div style={{ padding: '4rem', textAlign: 'center' }}>Loading details...</div>;
-  if (!booking) return <div style={{ padding: '4rem', textAlign: 'center' }}>Booking not found.</div>;
+  if (loading) return <div style={{ padding: '4rem', textAlign: 'center' }}>Đang tải chi tiết…</div>;
+  if (!booking) return <div style={{ padding: '4rem', textAlign: 'center' }}>Không tìm thấy đặt chỗ.</div>;
 
   return (
     <div className="container fade-in" style={{ padding: 'var(--space-6) var(--space-4)', maxWidth: '900px' }}>
-      <Link to="/profile/bookings" className="btn btn-ghost mb-4 d-inline-flex" style={{ padding: 0 }}><ArrowLeft size={18} /> Back to My Bookings</Link>
+      <Link to="/profile/bookings" className="btn btn-ghost mb-4 d-inline-flex" style={{ padding: 0 }}><ArrowLeft size={18} /> Về danh sách đặt chỗ</Link>
       
       <div className="page-header d-flex justify-between align-center">
-        <h1 className="page-title">Booking #{booking._id.slice(-6).toUpperCase()}</h1>
+        <h1 className="page-title">Đặt chỗ #{booking._id.slice(-6).toUpperCase()}</h1>
         <span className={`status-badge ${booking.status === 'PENDING' ? 'pending' : booking.status === 'COMPLETED' ? 'active' : 'locked'}`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
-          {booking.status}
+          {labelBookingStatus(booking.status)}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-5">
         <div className="card">
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Venue Information</h2>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Thông tin địa điểm</h2>
           <div className="d-flex align-center gap-2 mb-2"><MapPin size={18} className="text-muted"/> <span style={{ fontWeight: 600 }}>{booking.restaurantId?.name}</span></div>
           <div className="text-muted mb-4" style={{ paddingLeft: '26px' }}>{booking.restaurantId?.address}</div>
           
-          <div className="d-flex align-center gap-2 mb-2"><LayoutTemplate size={18} className="text-muted"/> <span>Hall: <strong style={{color: 'var(--primary)'}}>{booking.hallId?.name}</strong></span></div>
-          <div className="d-flex align-center gap-2 mb-2"><Clock size={18} className="text-muted"/> <span>Date: <strong>{new Date(booking.bookingDate).toLocaleDateString()} ({booking.shift})</strong></span></div>
+          <div className="d-flex align-center gap-2 mb-2"><LayoutTemplate size={18} className="text-muted"/> <span>Sảnh: <strong style={{color: 'var(--primary)'}}>{booking.hallId?.name}</strong></span></div>
+          <div className="d-flex align-center gap-2 mb-2"><Clock size={18} className="text-muted"/> <span>Ngày: <strong>{new Date(booking.bookingDate).toLocaleDateString('vi-VN')} ({labelShift(booking.shift)})</strong></span></div>
           
           {booking.customerNote && (
             <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: 'var(--radius-md)' }}>
-              <strong>Your Note:</strong> <p className="text-muted mt-1">{booking.customerNote}</p>
+              <strong>Ghi chú của bạn:</strong> <p className="text-muted mt-1">{booking.customerNote}</p>
             </div>
           )}
         </div>
 
         <div className="card">
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Financial Overview</h2>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Thanh toán</h2>
           <div className="d-flex justify-between mb-2">
-            <span>Hall Base Price:</span>
+            <span>Giá cơ bản sảnh:</span>
             <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(booking.hallId?.basePrice || 0)}</span>
           </div>
           
-          <div className="mt-3 mb-2" style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Selected Services:</div>
+          <div className="mt-3 mb-2" style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Dịch vụ đã chọn:</div>
           {booking.services?.map((svc, idx) => (
             <div key={idx} className="d-flex justify-between mb-2" style={{ fontSize: '0.9rem' }}>
-              <span>{svc.type} x{svc.quantity}</span>
+              <span>{labelServiceType(svc.type)} ×{svc.quantity}</span>
               <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(svc.snapshotPrice * svc.quantity)}</span>
             </div>
           ))}
 
           <div className="d-flex justify-between mt-4" style={{ borderTop: '2px dashed var(--border)', paddingTop: '1rem', fontWeight: 600, fontSize: '1.2rem', color: 'var(--primary)' }}>
-            <span>Estimated Total:</span>
+            <span>Tổng ước tính:</span>
             <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(booking.estimatedTotal)}</span>
           </div>
 
@@ -156,7 +178,7 @@ const BookingDetail = () => {
           
           {(booking.cancelReason || booking.rejectReason) && (
              <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#fef2f2', border: '1px solid #ef4444', borderRadius: 'var(--radius-md)', color: '#991b1b' }}>
-               <div className="d-flex align-center gap-2 mb-1" style={{ fontWeight: 600 }}><XCircle size={16}/> Reason:</div>
+               <div className="d-flex align-center gap-2 mb-1" style={{ fontWeight: 600 }}><XCircle size={16}/> Lý do:</div>
                <div>{booking.cancelReason || booking.rejectReason}</div>
              </div>
           )}

@@ -321,7 +321,6 @@ const ServicesManagement = () => {
               </div>
               <MediaGalleryPanel
                 title="Ảnh minh họa gói"
-                addLabel="Thêm ảnh"
                 images={formData.images || []}
                 resolveUrl={imageToUrl}
                 onRemove={removeServiceImage}
@@ -422,7 +421,7 @@ const ServicesManagement = () => {
                       <td style={{ fontWeight: 600 }}>{svc.name}</td>
                       <td>
                         <span className={`status-badge ${svc.type === 'FOOD' ? 'active' : 'pending'}`}>
-                          {svc.type}
+                          {svc.type === 'FOOD' ? 'Thực đơn' : svc.type === 'DECORATION' ? 'Trang trí' : svc.type}
                         </span>
                       </td>
                       <td style={{ color: 'var(--primary)', fontWeight: 500 }}>

@@ -56,30 +56,30 @@ const Home = () => {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1 }} />
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
           <h1 style={{ fontSize: '4rem', color: 'var(--primary)', textShadow: '0 2px 4px rgba(0,0,0,0.5)', marginBottom: '1rem' }}>
-            Find Your Dream Venue
+            Tìm không gian tiệc trong mơ
           </h1>
           <p style={{ fontSize: '1.25rem', maxWidth: '600px', margin: '0 auto 3rem auto', opacity: 0.9 }}>
-            Discover and book the most exquisite wedding locations carefully curated for your perfect day.
+            Khám phá và đặt những địa điểm cưới được chọn lọc, phục vụ trọn vẹn ngày trọng đại của bạn.
           </p>
           
           {/* Search Box */}
           <form onSubmit={handleSearch} className="card d-flex align-center gap-3" style={{ maxWidth: '900px', margin: '0 auto', padding: '1rem', borderRadius: 'var(--radius-full)' }}>
             <div className="input-wrapper" style={{ flex: 1.5 }}>
               <Search className="input-icon" size={20} />
-              <input type="text" className="input-field with-icon" placeholder="Search venues..." style={{ border: 'none', background: 'transparent' }} value={searchParams.keyword} onChange={e => setSearchParams({...searchParams, keyword: e.target.value})} />
+              <input type="text" className="input-field with-icon" placeholder="Tìm nhà hàng, địa điểm…" style={{ border: 'none', background: 'transparent' }} value={searchParams.keyword} onChange={e => setSearchParams({...searchParams, keyword: e.target.value})} />
             </div>
             <div style={{ width: '1px', height: '30px', backgroundColor: 'var(--border)' }}></div>
             <div className="input-wrapper" style={{ flex: 1 }}>
               <MapPin className="input-icon" size={20} />
-              <input type="text" className="input-field with-icon" placeholder="Location" style={{ border: 'none', background: 'transparent' }} value={searchParams.location} onChange={e => setSearchParams({...searchParams, location: e.target.value})} />
+              <input type="text" className="input-field with-icon" placeholder="Địa điểm / khu vực" style={{ border: 'none', background: 'transparent' }} value={searchParams.location} onChange={e => setSearchParams({...searchParams, location: e.target.value})} />
             </div>
             <div style={{ width: '1px', height: '30px', backgroundColor: 'var(--border)' }}></div>
             <div className="input-wrapper" style={{ flex: 1 }}>
               <Users className="input-icon" size={20} />
-              <input type="number" className="input-field with-icon" placeholder="Guests count" style={{ border: 'none', background: 'transparent' }} value={searchParams.capacity} onChange={e => setSearchParams({...searchParams, capacity: e.target.value})} />
+              <input type="number" className="input-field with-icon" placeholder="Số khách (sức chứa tối thiểu)" style={{ border: 'none', background: 'transparent' }} value={searchParams.capacity} onChange={e => setSearchParams({...searchParams, capacity: e.target.value})} />
             </div>
             <button type="submit" className="btn btn-primary" style={{ borderRadius: 'var(--radius-full)', padding: '0.75rem 2rem' }}>
-              Search
+              Tìm kiếm
             </button>
           </form>
         </div>
@@ -88,17 +88,19 @@ const Home = () => {
       {/* Featured Venues */}
       <section className="container" style={{ padding: 'var(--space-6) var(--space-4)' }}>
         <div className="text-center" style={{ marginBottom: 'var(--space-5)' }}>
-          <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Featured Venues</h2>
-          <p className="text-muted text-center" style={{ maxWidth: '600px', margin: '0 auto' }}>Explore our hand-picked selection of premium venues renowned for their exceptional service and breathtaking aesthetics.</p>
+          <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Địa điểm nổi bật</h2>
+          <p className="text-muted text-center" style={{ maxWidth: '600px', margin: '0 auto' }}>
+            Những nhà hàng được gợi ý, nổi bật với không gian và dịch vụ phù hợp tiệc cưới.
+          </p>
         </div>
 
         {loading ? (
-          <div className="text-center" style={{ padding: '3rem' }}>Loading magnificent venues...</div>
+          <div className="text-center" style={{ padding: '3rem' }}>Đang tải danh sách địa điểm…</div>
         ) : (
           <div className="grid grid-cols-3 gap-4" style={{ alignItems: 'stretch' }}>
             {restaurants.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                No venues found matching your criteria. Try adjusting your search.
+                Không tìm thấy địa điểm phù hợp. Hãy thử bộ lọc khác.
               </div>
             ) : (
               restaurants.map((rest) => (
@@ -156,11 +158,11 @@ const Home = () => {
                         overflow: 'hidden',
                       }}
                     >
-                      {rest.description || 'A beautiful venue for your perfect day.'}
+                      {rest.description || 'Không gian lý tưởng cho ngày trọng đại của bạn.'}
                     </p>
                     <div className="d-flex justify-between align-center" style={{ marginTop: 'auto', paddingTop: '1rem', flexShrink: 0 }}>
                       <span className="text-primary" style={{ fontWeight: 600 }}>
-                        Available now
+                        Xem chi tiết
                       </span>
                       <div className="btn btn-ghost" style={{ padding: 0, color: 'var(--primary)' }}>
                         <ArrowRight size={20} />

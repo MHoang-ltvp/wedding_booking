@@ -148,7 +148,7 @@ const HallsManagement = () => {
       toast.success('Đã xóa sảnh.');
       fetchHalls();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete hall');
+      toast.error(error.response?.data?.message || 'Không xóa được sảnh.');
     }
   };
 
@@ -180,7 +180,7 @@ const HallsManagement = () => {
       resetForm();
       fetchHalls();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Operation failed');
+      toast.error(error.response?.data?.message || 'Thao tác thất bại.');
     }
   };
 
@@ -212,7 +212,7 @@ const HallsManagement = () => {
         </div>
         {!showForm && (
           <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            <Plus size={18} /> Add New Hall
+            <Plus size={18} /> Thêm sảnh mới
           </button>
         )}
       </div>
@@ -220,7 +220,7 @@ const HallsManagement = () => {
       {showForm && (
         <div className="card fade-in" style={{ marginBottom: 'var(--space-5)', border: '1px solid var(--primary)', backgroundColor: 'var(--background)' }}>
           <div className="d-flex justify-between align-center" style={{ marginBottom: 'var(--space-4)' }}>
-            <h2 style={{ fontSize: '1.2rem' }}>{editingId ? 'Edit Hall' : 'Add New Hall'}</h2>
+            <h2 style={{ fontSize: '1.2rem' }}>{editingId ? 'Sửa sảnh' : 'Thêm sảnh mới'}</h2>
             <button className="btn btn-ghost" onClick={resetForm} style={{ padding: '0.25rem' }}>
               <X size={20} />
             </button>
@@ -258,7 +258,7 @@ const HallsManagement = () => {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
-                    placeholder="Ví dụ: Crystal Grand Ballroom"
+                    placeholder="Ví dụ: Sảnh Hoàng Gia"
                   />
                 </div>
 
@@ -330,7 +330,6 @@ const HallsManagement = () => {
 
               <MediaGalleryPanel
                 title="Thư viện ảnh"
-                addLabel="Thêm ảnh"
                 images={formData.images || []}
                 resolveUrl={(img) => (typeof img === 'string' ? img : img?.url)}
                 onRemove={removeImage}
@@ -355,33 +354,33 @@ const HallsManagement = () => {
 
       <div className="card" style={{ padding: 0 }}>
         {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>
+          <div style={{ padding: '2rem', textAlign: 'center' }}>Đang tải…</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Hall Name</th>
-                  <th>Capacity</th>
-                  <th>Area</th>
-                  <th>Base Price</th>
-                  <th>Status</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th>Tên sảnh</th>
+                  <th>Sức chứa</th>
+                  <th>Diện tích</th>
+                  <th>Giá cơ bản</th>
+                  <th>Trạng thái</th>
+                  <th style={{ textAlign: 'right' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {halls.length === 0 ? (
-                  <tr><td colSpan="6" className="text-center" style={{ padding: '2rem' }}>No halls created yet. Click "Add New Hall" to start.</td></tr>
+                  <tr><td colSpan="6" className="text-center" style={{ padding: '2rem' }}>Chưa có sảnh. Bấm «Thêm sảnh mới» để bắt đầu.</td></tr>
                 ) : (
                   halls.map(hall => (
                     <tr key={hall._id}>
                       <td style={{ fontWeight: 600 }}>{hall.name}</td>
-                      <td>{hall.capacity} pax</td>
+                      <td>{hall.capacity} khách</td>
                       <td className="text-muted">{hall.area ? `${hall.area} m²` : '-'}</td>
                       <td style={{ color: 'var(--primary)' }}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(hall.basePrice)}</td>
                       <td>
                         <span className={`status-badge ${hall.status === 'AVAILABLE' ? 'active' : hall.status === 'MAINTENANCE' ? 'pending' : 'locked'}`}>
-                          {hall.status}
+                          {hall.status === 'AVAILABLE' ? 'Khả dụng' : hall.status === 'MAINTENANCE' ? 'Bảo trì' : hall.status}
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>

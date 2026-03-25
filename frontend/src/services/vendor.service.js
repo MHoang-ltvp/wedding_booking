@@ -47,6 +47,15 @@ export async function fetchVendorHalls(restaurantId) {
   return Array.isArray(data.halls) ? data.halls : [];
 }
 
+/** Lịch sảnh (đối tác): cùng payload với cổng public, tối đa 14 ngày */
+export async function fetchVendorHallAvailabilityRange(hallId, params = {}) {
+  const { data } = await api.get(paths.vendor.hallAvailabilityRange(hallId), {
+    params: { days: 14, ...params },
+  });
+  if (!data.success || !data.data) return null;
+  return data.data;
+}
+
 export async function fetchVendorServices(restaurantId) {
   const { data } = await api.get(paths.vendor.services, { params: { restaurantId } });
   return Array.isArray(data.services) ? data.services : [];

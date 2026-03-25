@@ -40,6 +40,7 @@ export const paths = {
     restaurantWithdrawApproval: (id) => `/vendor/restaurants/${id}/withdraw-approval`,
     halls: '/vendor/halls',
     hall: (id) => `/vendor/halls/${id}`,
+    hallAvailabilityRange: (id) => `/vendor/halls/${id}/availability-range`,
     hallImages: (id) => `/vendor/halls/${id}/images`,
     services: '/vendor/services',
     service: (id) => `/vendor/services/${id}`,

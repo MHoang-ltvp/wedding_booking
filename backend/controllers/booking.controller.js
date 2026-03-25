@@ -144,7 +144,9 @@ const create = async (req, res) => {
     }
 
     const estimatedTotal = hall.basePrice + servicesTotal;
+    const paidAt = new Date();
 
+    /** Luồng đặt chỗ hiện tại: thanh toán trọn gói ngay (mock), chấp nhận nhà hàng ngay — không cọc / không bước xác minh thêm */
     const booking = await Booking.create({
       customerId,
       restaurantId,
@@ -154,9 +156,11 @@ const create = async (req, res) => {
       services: lineServices,
       customerNote: typeof customerNote === 'string' ? customerNote : '',
       estimatedTotal,
-      vendorAccepted: false,
-      paidInFull: false,
-      status: 'PENDING',
+      vendorAccepted: true,
+      paidInFull: true,
+      paidAt,
+      finalAmount: estimatedTotal,
+      status: 'COMPLETED',
     });
 
     const populated = await Booking.findById(booking._id)
@@ -166,7 +170,7 @@ const create = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Tạo yêu cầu đặt chỗ thành công.',
+      message: 'Đặt chỗ thành công — đã thanh toán và hoàn tất.',
       booking: populated,
     });
   } catch (err) {
@@ -366,11 +370,12 @@ const confirmPayment = async (req, res) => {
     booking.paidInFull = true;
     booking.paidAt = new Date();
     booking.finalAmount = total;
+    booking.status = 'COMPLETED';
     await booking.save();
 
     return res.json({
       success: true,
-      message: 'Đã ghi nhận thanh toán trọn gói.',
+      message: 'Đã ghi nhận thanh toán — đặt chỗ hoàn tất.',
       booking,
     });
   } catch (err) {

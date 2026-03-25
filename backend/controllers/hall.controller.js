@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const Hall = require('../models/Hall');
 const Restaurant = require('../models/Restaurant');
 const Booking = require('../models/Booking');
+const { computeHallAvailabilitySlots } = require('../utils/hallAvailabilityRange');
 const {
   uploadDiskFilesToCloudinary,
   safeUnlink,
@@ -265,10 +266,61 @@ const uploadHallImages = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/vendor/halls/:id/availability-range?from=&days=
+ * Lịch 2 ca (trống / hết) — cùng logic cổng khách, tối đa 14 ngày.
+ */
+const availabilityRange = async (req, res) => {
+  try {
+    const vendorId = req.user._id;
+    const { id } = req.params;
+    const { from: fromQ, days: daysQ } = req.query || {};
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'ID sảnh không hợp lệ.' });
+    }
+
+    const hall = await Hall.findById(id).lean();
+    if (!hall || hall.isDeleted) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy sảnh.' });
+    }
+
+    const owned = await assertRestaurantOwned(hall.restaurantId, vendorId);
+    if (!owned) {
+      return res.status(403).json({ success: false, message: 'Không có quyền xem lịch sảnh này.' });
+    }
+
+    const { from, to, days, slots, hallBookable } = await computeHallAvailabilitySlots({
+      hallId: id,
+      hall,
+      fromQ,
+      daysQ,
+      maxDays: 14,
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        hallId: id,
+        hallName: hall.name,
+        hallBookable,
+        from,
+        to,
+        days,
+        slots,
+      },
+    });
+  } catch (err) {
+    console.error('hall.availabilityRange:', err);
+    return res.status(500).json({ success: false, message: 'Lỗi lấy lịch sảnh.' });
+  }
+};
+
 module.exports = {
   create,
   list,
   update,
   remove,
   uploadHallImages,
+  availabilityRange,
 };

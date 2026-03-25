@@ -7,7 +7,7 @@ import '../styles/role-shell.css';
 const AdminLayout = () => {
   const { user, loading, logout } = useContext(AuthContext);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>Đang tải…</div>;
   if (!user || user.role !== 'ADMIN') {
     return <Navigate to="/login" replace />;
   }
@@ -23,7 +23,7 @@ const AdminLayout = () => {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <h2>Lumina<span style={{color: 'var(--text-muted)', fontSize: '0.9rem', marginLeft: '10px'}}>ADMIN</span></h2>
+          <h2>Lumina<span style={{color: 'var(--text-muted)', fontSize: '0.9rem', marginLeft: '10px'}}>QUẢN TRỊ</span></h2>
         </div>
         
         <nav className="sidebar-nav">
@@ -44,11 +44,11 @@ const AdminLayout = () => {
             <div className="avatar-placeholder">{user.fullName.charAt(0)}</div>
             <div style={{overflow: 'hidden'}}>
               <div style={{fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis'}}>{user.fullName}</div>
-              <div style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>Administrator</div>
+              <div style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>Quản trị viên</div>
             </div>
           </div>
           <button onClick={logout} className="btn btn-ghost full-width" style={{justifyContent: 'flex-start', padding: '0.5rem'}}>
-            <LogOut size={18} /> Logout
+            <LogOut size={18} /> Đăng xuất
           </button>
         </div>
       </aside>

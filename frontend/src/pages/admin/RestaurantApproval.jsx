@@ -6,6 +6,13 @@ import { fetchAdminRestaurants } from '../../services/admin.service';
 import { toast } from 'react-toastify';
 import { CheckCircle, XCircle, Eye } from 'lucide-react';
 
+function labelApprovalStatus(s) {
+  if (s === 'PENDING') return 'Chờ duyệt';
+  if (s === 'APPROVED') return 'Đã duyệt';
+  if (s === 'REJECTED') return 'Từ chối';
+  return s || '—';
+}
+
 const RestaurantApproval = () => {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +92,7 @@ const RestaurantApproval = () => {
   return (
     <div className="fade-in">
       <div className="page-header">
-        <h1 className="page-title">Restaurant Approvals</h1>
+        <h1 className="page-title">Duyệt hồ sơ nhà hàng</h1>
         <div className="input-group" style={{ marginBottom: 0 }}>
           <select
             className="input-field"
@@ -93,10 +100,10 @@ const RestaurantApproval = () => {
             onChange={(e) => setFilter(e.target.value)}
             style={{ width: '200px', height: '40px' }}
           >
-            <option value="ALL">All Approvals</option>
-            <option value="PENDING">Pending</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
+            <option value="ALL">Tất cả trạng thái duyệt</option>
+            <option value="PENDING">Chờ duyệt</option>
+            <option value="APPROVED">Đã duyệt</option>
+            <option value="REJECTED">Đã từ chối</option>
           </select>
         </div>
       </div>
@@ -156,26 +163,26 @@ const RestaurantApproval = () => {
 
       <div className="card" style={{ padding: 0 }}>
         {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>
+          <div style={{ padding: '2rem', textAlign: 'center' }}>Đang tải…</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Restaurant Name</th>
-                  <th>Vendor</th>
-                  <th>Address</th>
-                  <th>Status</th>
+                  <th>Tên nhà hàng</th>
+                  <th>Chủ nhà hàng</th>
+                  <th>Địa chỉ</th>
+                  <th>Trạng thái duyệt</th>
                   <th>Lý do từ chối</th>
                   <th>Hồ sơ</th>
-                  <th>Actions</th>
+                  <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {restaurants.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="text-center">
-                      No restaurants found
+                      Không có nhà hàng nào
                     </td>
                   </tr>
                 ) : (
@@ -206,7 +213,7 @@ const RestaurantApproval = () => {
                                 : 'pending'
                           }`}
                         >
-                          {r.approvalStatus || 'PENDING'}
+                          {labelApprovalStatus(r.approvalStatus)}
                         </span>
                       </td>
                       <td
@@ -246,7 +253,7 @@ const RestaurantApproval = () => {
                               type="button"
                               onClick={() => updateStatus(r._id, 'APPROVED')}
                             >
-                              <CheckCircle size={14} /> Approve
+                              <CheckCircle size={14} /> Duyệt
                             </button>
                             <button
                               className="btn btn-outline"
@@ -259,7 +266,7 @@ const RestaurantApproval = () => {
                               type="button"
                               onClick={() => openRejectModal(r)}
                             >
-                              <XCircle size={14} /> Reject
+                              <XCircle size={14} /> Từ chối
                             </button>
                           </div>
                         ) : (

@@ -656,7 +656,6 @@ export default function VendorRestaurantEditor({
               </div>
               <MediaGalleryPanel
                 title="Thư viện ảnh"
-                addLabel="Thêm ảnh"
                 images={formData.images || []}
                 resolveUrl={imageToUrl}
                 onRemove={removeImage}
@@ -687,7 +686,6 @@ export default function VendorRestaurantEditor({
               </div>
               <MediaGalleryPanel
                 title="Thư viện ảnh"
-                addLabel="Thêm ảnh"
                 images={formData.images || []}
                 resolveUrl={imageToUrl}
                 onRemove={removeImage}

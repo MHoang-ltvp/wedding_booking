@@ -9,6 +9,20 @@ import { ArrowLeft, CheckCircle, XCircle, Images } from 'lucide-react';
 const fmtMoney = (n) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(n) || 0);
 
+function labelApprovalStatus(s) {
+  if (s === 'PENDING') return 'Chờ duyệt';
+  if (s === 'APPROVED') return 'Đã duyệt';
+  if (s === 'REJECTED') return 'Từ chối';
+  if (s === 'DRAFT') return 'Nháp';
+  return s || '—';
+}
+
+function labelServiceType(t) {
+  if (t === 'FOOD') return 'Thực đơn';
+  if (t === 'DECORATION') return 'Trang trí';
+  return t;
+}
+
 const AdminRestaurantReview = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -122,7 +136,7 @@ const AdminRestaurantReview = () => {
                     : 'pending'
               }`}
             >
-              {restaurant.approvalStatus}
+              {labelApprovalStatus(restaurant.approvalStatus)}
             </span>
             {restaurant.approvalStatus === 'REJECTED' && restaurant.rejectionReason && (
               <p className="text-muted" style={{ marginTop: '0.5rem', maxWidth: '640px', fontSize: '0.9rem' }}>
@@ -258,7 +272,7 @@ const AdminRestaurantReview = () => {
                 services.map((s) => (
                   <tr key={s._id}>
                     <td style={{ fontWeight: 500 }}>{s.name}</td>
-                    <td>{s.type}</td>
+                    <td>{labelServiceType(s.type)}</td>
                     <td>{fmtMoney(s.price)}</td>
                   </tr>
                 ))

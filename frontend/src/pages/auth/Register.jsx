@@ -9,7 +9,7 @@ const Register = () => {
     email: '',
     phone: '',
     password: '',
-    role: 'CUSTOMER'
+    role: 'CUSTOMER',
   });
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useContext(AuthContext);
@@ -33,67 +33,104 @@ const Register = () => {
   return (
     <div className="auth-box fade-in">
       <div className="auth-header">
-        <h2>Create an Account</h2>
-        <p>Join us to start your journey</p>
+        <h2>Tạo tài khoản</h2>
+        <p>Tham gia để đặt tiệc hoặc quản lý nhà hàng</p>
       </div>
 
       <form onSubmit={handleSubmit} className="auth-form">
         <div className="input-group">
-          <label>I am a...</label>
+          <label>Tôi là…</label>
           <div className="role-selector d-flex gap-3">
             <label className={`role-option ${formData.role === 'CUSTOMER' ? 'active' : ''}`}>
               <input type="radio" name="role" value="CUSTOMER" checked={formData.role === 'CUSTOMER'} onChange={handleChange} />
-              Customer
+              Khách hàng
             </label>
             <label className={`role-option ${formData.role === 'VENDOR' ? 'active' : ''}`}>
               <input type="radio" name="role" value="VENDOR" checked={formData.role === 'VENDOR'} onChange={handleChange} />
-              Vendor
+              Nhà cung cấp
             </label>
           </div>
         </div>
 
         <div className="input-group">
-          <label>Full Name</label>
+          <label>Họ và tên</label>
           <div className="input-wrapper">
             <User className="input-icon" size={20} />
-            <input type="text" name="fullName" className="input-field with-icon" placeholder="John Doe" value={formData.fullName} onChange={handleChange} required />
+            <input
+              type="text"
+              name="fullName"
+              className="input-field with-icon"
+              placeholder="Nguyễn Văn A"
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+            />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3" style={{marginBottom: '0'}}>
+        <div className="grid grid-cols-2 gap-3" style={{ marginBottom: '0' }}>
           <div className="input-group">
             <label>Email</label>
             <div className="input-wrapper">
               <Mail className="input-icon" size={20} />
-              <input type="email" name="email" className="input-field with-icon" placeholder="Email" value={formData.email} onChange={handleChange} required />
+              <input
+                type="email"
+                name="email"
+                className="input-field with-icon"
+                placeholder="email@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
             </div>
           </div>
           <div className="input-group">
-            <label>Phone</label>
+            <label>Điện thoại</label>
             <div className="input-wrapper">
               <Phone className="input-icon" size={20} />
-              <input type="tel" name="phone" className="input-field with-icon" placeholder="Phone" value={formData.phone} onChange={handleChange} required />
+              <input
+                type="tel"
+                name="phone"
+                className="input-field with-icon"
+                placeholder="0900 000 000"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
             </div>
           </div>
         </div>
 
         <div className="input-group">
-          <label>Password</label>
+          <label>Mật khẩu</label>
           <div className="input-wrapper">
             <Lock className="input-icon" size={20} />
-            <input type="password" name="password" className="input-field with-icon" placeholder="Create password" value={formData.password} onChange={handleChange} required />
+            <input
+              type="password"
+              name="password"
+              className="input-field with-icon"
+              placeholder="Tạo mật khẩu"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
           </div>
         </div>
 
         <div className="auth-actions">
           <button type="submit" className="btn btn-primary full-width" disabled={isLoading}>
-            {isLoading ? 'Creating Account...' : 'Sign Up'}
+            {isLoading ? 'Đang tạo tài khoản…' : 'Đăng ký'}
           </button>
         </div>
       </form>
 
       <div className="auth-footer text-center mt-4">
-        <p>Already have an account? <Link to="/login" className="auth-link">Sign in</Link></p>
+        <p>
+          Đã có tài khoản?{' '}
+          <Link to="/login" className="auth-link">
+            Đăng nhập
+          </Link>
+        </p>
       </div>
     </div>
   );

@@ -27,51 +27,56 @@ const Login = () => {
   return (
     <div className="auth-box fade-in">
       <div className="auth-header">
-        <h2>Welcome Back</h2>
-        <p>Sign in to continue planning your perfect event</p>
+        <h2>Chào mừng trở lại</h2>
+        <p>Đăng nhập để tiếp tục đặt tiệc và quản lý hồ sơ</p>
       </div>
 
       <form onSubmit={handleSubmit} className="auth-form">
         <div className="input-group">
-          <label>Email Address</label>
+          <label>Email</label>
           <div className="input-wrapper">
             <Mail className="input-icon" size={20} />
-            <input 
-              type="email" 
-              className="input-field with-icon" 
-              placeholder="Enter your email" 
+            <input
+              type="email"
+              className="input-field with-icon"
+              placeholder="Nhập email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required 
+              required
             />
           </div>
         </div>
 
         <div className="input-group">
-          <label>Password</label>
+          <label>Mật khẩu</label>
           <div className="input-wrapper">
             <Lock className="input-icon" size={20} />
-            <input 
-              type="password" 
-              className="input-field with-icon" 
-              placeholder="Enter your password" 
+            <input
+              type="password"
+              className="input-field with-icon"
+              placeholder="Nhập mật khẩu"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required 
+              required
             />
           </div>
         </div>
 
         <div className="auth-actions">
           <button type="submit" className="btn btn-primary full-width" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? 'Đang đăng nhập…' : 'Đăng nhập'}
             {!isLoading && <ArrowRight size={18} />}
           </button>
         </div>
       </form>
 
       <div className="auth-footer">
-        <p>Don't have an account? <Link to="/register" className="auth-link">Create one</Link></p>
+        <p>
+          Chưa có tài khoản?{' '}
+          <Link to="/register" className="auth-link">
+            Đăng ký ngay
+          </Link>
+        </p>
       </div>
     </div>
   );

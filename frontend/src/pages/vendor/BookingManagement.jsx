@@ -11,6 +11,22 @@ import {
   vendorAcceptedBooking,
 } from '../../shared/bookingPayment';
 
+function labelBookingStatus(status) {
+  const m = {
+    PENDING: 'Chờ xử lý',
+    COMPLETED: 'Hoàn thành',
+    CANCELLED: 'Đã hủy',
+    REJECTED: 'Từ chối',
+  };
+  return m[status] || status;
+}
+
+function labelShift(shift) {
+  if (shift === 'MORNING') return 'Ca sáng';
+  if (shift === 'EVENING') return 'Ca tối';
+  return shift;
+}
+
 const BookingManagement = () => {
   const { selectedRestaurantId, selectedRestaurant, loading: vrLoading, restaurants } =
     useVendorRestaurant();
@@ -43,10 +59,11 @@ const BookingManagement = () => {
         restaurantId: selectedRestaurantId,
       });
       let data = items;
+      const needsVendorAccept = (b) =>
+        b.status === 'PENDING' && !paidInFullBooking(b) && !vendorAcceptedBooking(b);
+
       if (filter === 'PENDING_AWAIT_VENDOR') {
-        data = items.filter(
-          (b) => b.status === 'PENDING' && !vendorAcceptedBooking(b)
-        );
+        data = items.filter(needsVendorAccept);
       } else if (filter === 'PENDING_AWAIT_PAY') {
         data = items.filter(
           (b) =>
@@ -85,12 +102,12 @@ const BookingManagement = () => {
   const handleReject = async (e) => {
     e.preventDefault();
     if (!rejectReason) {
-      toast.error('Please provide a reason');
+      toast.error('Vui lòng nhập lý do từ chối.');
       return;
     }
     try {
       await api.put(paths.vendor.bookingReject(selectedBooking._id), { rejectReason });
-      toast.success('Booking rejected.');
+      toast.success('Đã từ chối đặt chỗ.');
       setShowRejectModal(false);
       setSelectedBooking(null);
       setRejectReason('');
@@ -101,14 +118,14 @@ const BookingManagement = () => {
   };
 
   const markCompleted = async (id) => {
-    if(!window.confirm('Mark this event as strictly completed?')) return;
+    if (!window.confirm('Xác nhận đánh dấu sự kiện này là đã hoàn thành?')) return;
     try {
       // Assuming vendor status endpoint accepts COMPLETED 
       await api.put(paths.vendor.bookingStatus(id), { status: 'COMPLETED' });
-      toast.success('Event marked as completed.');
+      toast.success('Đã đánh dấu hoàn thành sự kiện.');
       fetchBookings();
     } catch (error) {
-      toast.error('Failed to update status');
+      toast.error('Không cập nhật được trạng thái.');
     }
   };
 
@@ -162,7 +179,7 @@ const BookingManagement = () => {
           <h1 className="page-title">Đặt chỗ</h1>
           {selectedRestaurant && (
             <p className="text-muted" style={{ marginTop: '0.35rem', fontSize: '0.9rem' }}>
-              Chỉ hiển thị booking cho nhà hàng: <strong>{selectedRestaurant.name}</strong>
+              Chỉ hiển thị đặt chỗ cho nhà hàng: <strong>{selectedRestaurant.name}</strong>
             </p>
           )}
         </div>
@@ -200,15 +217,15 @@ const BookingManagement = () => {
 
       {showRejectModal && (
         <div className="card fade-in" style={{ marginBottom: 'var(--space-5)', border: '1px solid #EF4444', backgroundColor: '#fef2f2' }}>
-          <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#991b1b' }}>Reject Booking #{selectedBooking._id.slice(-6).toUpperCase()}</h2>
+          <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#991b1b' }}>Từ chối đặt chỗ #{selectedBooking._id.slice(-6).toUpperCase()}</h2>
           <form onSubmit={handleReject}>
             <div className="input-group">
-              <label>Reason for Rejection</label>
-              <textarea className="input-field" rows="3" value={rejectReason} onChange={e => setRejectReason(e.target.value)} required placeholder="e.g. Hall fully booked on this date" />
+              <label>Lý do từ chối</label>
+              <textarea className="input-field" rows="3" value={rejectReason} onChange={e => setRejectReason(e.target.value)} required placeholder="Ví dụ: Sảnh đã kín vào ngày này" />
             </div>
             <div className="d-flex justify-end gap-3 mt-4">
-              <button type="button" className="btn btn-outline" style={{ borderColor: '#DC2626', color: '#991b1b' }} onClick={() => setShowRejectModal(false)}>Cancel</button>
-              <button type="submit" className="btn" style={{ backgroundColor: '#EF4444', color: 'white' }}>Confirm Rejection</button>
+              <button type="button" className="btn btn-outline" style={{ borderColor: '#DC2626', color: '#991b1b' }} onClick={() => setShowRejectModal(false)}>Hủy</button>
+              <button type="submit" className="btn" style={{ backgroundColor: '#EF4444', color: 'white' }}>Xác nhận từ chối</button>
             </div>
           </form>
         </div>
@@ -216,20 +233,20 @@ const BookingManagement = () => {
 
       <div className="card" style={{ padding: 0 }}>
         {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center' }}>Loading bookings...</div>
+          <div style={{ padding: '3rem', textAlign: 'center' }}>Đang tải đặt chỗ…</div>
         ) : bookings.length === 0 ? (
-          <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>No bookings found.</div>
+          <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có đặt chỗ nào.</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Booking ID</th>
-                  <th>Customer Info</th>
-                  <th>Event Details</th>
-                  <th>Financials</th>
-                  <th>Status</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  <th>Mã đặt chỗ</th>
+                  <th>Khách hàng</th>
+                  <th>Sự kiện</th>
+                  <th>Tài chính</th>
+                  <th>Trạng thái</th>
+                  <th style={{ textAlign: 'right' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -237,31 +254,38 @@ const BookingManagement = () => {
                   <tr key={b._id}>
                     <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>#{b._id.slice(-6).toUpperCase()}</td>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{b.customerId?.fullName || 'Ext User'}</div>
-                      <div className="text-muted" style={{ fontSize: '0.85rem' }}>{b.customerId?.phone || 'N/A'}</div>
+                      <div style={{ fontWeight: 600 }}>{b.customerId?.fullName || 'Khách'}</div>
+                      <div className="text-muted" style={{ fontSize: '0.85rem' }}>{b.customerId?.phone || '—'}</div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 500 }}>{b.hallId?.name || 'Hall'}</div>
-                      <div className="text-muted" style={{ fontSize: '0.85rem' }}>{new Date(b.bookingDate).toLocaleDateString('en-GB')} ({b.shift})</div>
+                      <div style={{ fontWeight: 500 }}>{b.hallId?.name || 'Sảnh'}</div>
+                      <div className="text-muted" style={{ fontSize: '0.85rem' }}>{new Date(b.bookingDate).toLocaleDateString('vi-VN')} ({labelShift(b.shift)})</div>
                     </td>
                     <td>
-                      <div style={{ color: 'var(--primary)', fontWeight: 600 }}>Est: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.estimatedTotal)}</div>
+                      <div style={{ color: 'var(--primary)', fontWeight: 600 }}>Ước tính: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.estimatedTotal)}</div>
                     </td>
                     <td>
-                      <span className={`status-badge ${getStatusColor(b.status)}`}>{b.status.replace('_', ' ')}</span>
-                      {b.status === 'PENDING' && !vendorAcceptedBooking(b) && (
+                      <span className={`status-badge ${getStatusColor(b.status)}`}>{labelBookingStatus(b.status)}</span>
+                      {b.status === 'COMPLETED' && (
+                        <div className="text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                          Đã thanh toán — lịch đã giữ
+                        </div>
+                      )}
+                      {b.status === 'PENDING' && paidInFullBooking(b) && (
+                        <div className="text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                          Đã thanh toán — chờ đánh dấu hoàn tất (dữ liệu cũ)
+                        </div>
+                      )}
+                      {b.status === 'PENDING' && !paidInFullBooking(b) && !vendorAcceptedBooking(b) && (
                         <div className="text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>Chờ chấp nhận</div>
                       )}
                       {b.status === 'PENDING' && vendorAcceptedBooking(b) && !paidInFullBooking(b) && (
                         <div className="text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>Chờ thanh toán</div>
                       )}
-                      {b.status === 'PENDING' && paidInFullBooking(b) && (
-                        <div className="text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>Đã thanh toán đủ</div>
-                      )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div className="d-flex gap-2 justify-end">
-                        {b.status === 'PENDING' && !vendorAcceptedBooking(b) && (
+                        {b.status === 'PENDING' && !paidInFullBooking(b) && !vendorAcceptedBooking(b) && (
                           <>
                             <button className="btn btn-ghost" style={{ padding: '0.25rem', color: '#10B981' }} onClick={() => { setSelectedBooking(b); setShowApproveModal(true); setShowRejectModal(false); }} title="Chấp nhận">
                               <CheckCircle size={18} />

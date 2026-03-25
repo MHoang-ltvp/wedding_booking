@@ -27,7 +27,7 @@ const AuthLayout = () => {
         <div className="auth-overlay"></div>
         <div className="auth-brand">
           <h1 className="brand-logo">Lumina</h1>
-          <p className="brand-tagline">Elevating Your Special Day to Art.</p>
+          <p className="brand-tagline">Nâng tầm ngày trọng đại của bạn.</p>
         </div>
       </div>
       <div className="auth-form-side">

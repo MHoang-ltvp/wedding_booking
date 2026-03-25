@@ -19,14 +19,15 @@ import AdminRestaurantReview from './pages/admin/AdminRestaurantReview';
 import RestaurantProfile from './pages/vendor/RestaurantProfile';
 import VendorRestaurantList from './pages/vendor/VendorRestaurantList';
 import HallsManagement from './pages/vendor/HallsManagement';
+import VendorHallSchedule from './pages/vendor/VendorHallSchedule';
 import ServicesManagement from './pages/vendor/ServicesManagement';
 import Home from './pages/public/Home';
 import RestaurantDetail from './pages/public/RestaurantDetail';
 import CreateBooking from './pages/customer/CreateBooking';
 import MyBookings from './pages/customer/MyBookings';
+import BookingDetail from './pages/customer/BookingDetail';
 import BookingManagement from './pages/vendor/BookingManagement';
 import SystemBookings from './pages/admin/SystemBookings';
-import BookingDetail from './pages/customer/BookingDetail';
 import DashboardAdmin from './pages/admin/DashboardAdmin';
 import DashboardVendor from './pages/vendor/DashboardVendor';
 
@@ -83,6 +84,7 @@ const App = () => {
           <Route path="restaurants" element={<VendorRestaurantList />} />
           <Route path="restaurants/:restaurantId" element={<RestaurantProfile />} />
           <Route path="halls" element={<HallsManagement />} />
+          <Route path="halls/schedule" element={<VendorHallSchedule />} />
           <Route path="services" element={<ServicesManagement />} />
           <Route path="bookings" element={<BookingManagement />} />
           <Route path="*" element={<Navigate to="/vendor/dashboard" replace />} />

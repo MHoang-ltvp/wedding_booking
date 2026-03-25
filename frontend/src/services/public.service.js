@@ -31,6 +31,15 @@ export async function fetchPublicRestaurantServices(restaurantId) {
   return Array.isArray(d) ? d : [];
 }
 
+/** Lịch 14 ngày (2 ca / ngày: available true = trống) — khớp quy tắc đặt chỗ */
+export async function fetchHallAvailabilityRange(hallId, params = {}) {
+  const { data } = await api.get(paths.public.hallAvailabilityRange(hallId), {
+    params: { days: 14, ...params },
+  });
+  if (!data.success || !data.data) return null;
+  return data.data;
+}
+
 /** @returns {Promise<{ MORNING: boolean, EVENING: boolean } | null>} */
 export async function fetchHallAvailabilitySlotBools(hallId, dateYmd) {
   const { data } = await api.get(paths.public.hallAvailability(hallId), {

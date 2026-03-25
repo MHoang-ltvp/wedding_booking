@@ -24,6 +24,9 @@ router.post(
   hallController.uploadHallImages,
 );
 
+// GET /api/vendor/halls/:id/availability-range
+router.get('/:id/availability-range', hallController.availabilityRange);
+
 // PUT /api/vendor/halls/:id
 router.put('/:id', hallController.update);
 

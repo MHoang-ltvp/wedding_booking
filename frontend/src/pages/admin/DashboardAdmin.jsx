@@ -18,7 +18,7 @@ const DashboardAdmin = () => {
       setStats(res.data.stats || res.data.data || res.data);
       setLoading(false);
     } catch (error) {
-      toast.error('Failed to load admin stats');
+      toast.error('Không tải được thống kê quản trị.');
       // Mock data for UI presentation
       setStats({
         totalUsers: 156,
@@ -30,7 +30,7 @@ const DashboardAdmin = () => {
     }
   };
 
-  if (loading) return <div style={{ padding: '3rem', textAlign: 'center' }}>Loading system metrics...</div>;
+  if (loading) return <div style={{ padding: '3rem', textAlign: 'center' }}>Đang tải số liệu hệ thống…</div>;
 
   return (
     <div className="fade-in">
@@ -44,7 +44,7 @@ const DashboardAdmin = () => {
             <Users size={28} />
           </div>
           <div>
-            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Total Users</div>
+            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Tổng người dùng</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats?.totalUsers || 0}</div>
           </div>
         </div>
@@ -54,7 +54,7 @@ const DashboardAdmin = () => {
             <ShieldCheck size={28} />
           </div>
           <div>
-            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Registered Vendors</div>
+            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Đối tác đăng ký</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats?.totalVendors || 0}</div>
           </div>
         </div>
@@ -64,7 +64,7 @@ const DashboardAdmin = () => {
             <Building size={28} />
           </div>
           <div>
-            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Active Restaurants</div>
+            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Nhà hàng hoạt động</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats?.activeRestaurants || 0}</div>
           </div>
         </div>
@@ -74,16 +74,16 @@ const DashboardAdmin = () => {
             <Activity size={28} />
           </div>
           <div>
-            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Total Transactions</div>
+            <div className="text-muted" style={{ fontSize: '0.9rem' }}>Tổng đặt chỗ</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats?.totalBookings || 0}</div>
           </div>
         </div>
       </div>
 
       <div className="card" style={{ height: '350px', display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Platform Activity Overview</h3>
+        <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Hoạt động nền tảng</h3>
         <div style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-          <p>Global Analytics Engine loading metrics visualization...</p>
+          <p>Biểu đồ phân tích sẽ có trong bản cập nhật sau.</p>
         </div>
       </div>
     </div>

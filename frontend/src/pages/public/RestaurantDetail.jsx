@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import {
-  fetchPublicRestaurantBundle,
-  fetchHallAvailabilitySlotBools,
-} from '../../services/public.service';
-import { MapPin, Users, CalendarDays, CheckCircle2, ChevronRight, LayoutTemplate } from 'lucide-react';
+import { fetchPublicRestaurantBundle, fetchHallAvailabilityRange } from '../../services/public.service';
+import { MapPin, Users, CheckCircle2, ChevronRight, LayoutTemplate, CalendarDays } from 'lucide-react';
+import HallShiftCalendar from '../../shared/components/HallShiftCalendar';
+import { getHallCoverSrcOrPlaceholder } from '../../shared/hallCover';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
@@ -13,8 +12,18 @@ const RestaurantDetail = () => {
   const [halls, setHalls] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [date, setDate] = useState('');
-  const [availability, setAvailability] = useState({});
+  const [sidebarHallId, setSidebarHallId] = useState('');
+  const [pick, setPick] = useState({ date: '', shift: 'MORNING' });
+
+  const bookingHalls = useMemo(
+    () => (halls || []).filter((h) => h.status === 'AVAILABLE'),
+    [halls],
+  );
+
+  const sidebarHall = useMemo(
+    () => bookingHalls.find((x) => String(x._id) === String(sidebarHallId)),
+    [bookingHalls, sidebarHallId],
+  );
 
   useEffect(() => {
     fetchData();
@@ -38,23 +47,16 @@ const RestaurantDetail = () => {
     }
   };
 
-  const checkAvailability = async (e) => {
-    e.preventDefault();
-    if (!date) return;
-    try {
-      const availabilities = {};
-      for (const hall of halls) {
-        const slots = await fetchHallAvailabilitySlotBools(hall._id, date);
-        if (slots) {
-          availabilities[hall._id] = slots;
-        }
-      }
-      setAvailability(availabilities);
-      toast.success('Đã kiểm tra lịch trống.');
-    } catch (error) {
-      toast.error('Không kiểm tra được lịch. Thử lại.');
+  useEffect(() => {
+    if (bookingHalls.length === 0) {
+      setSidebarHallId('');
+      return;
     }
-  };
+    setSidebarHallId((prev) => {
+      if (prev && bookingHalls.some((h) => String(h._id) === prev)) return prev;
+      return String(bookingHalls[0]._id);
+    });
+  }, [bookingHalls]);
 
   if (loading) return <div style={{ padding: '4rem', textAlign: 'center' }}>Đang tải...</div>;
   if (!restaurant) return <div style={{ padding: '4rem', textAlign: 'center' }}>Không tìm thấy địa điểm.</div>;
@@ -99,29 +101,40 @@ const RestaurantDetail = () => {
               <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem' }}>Sảnh tiệc</h2>
               <div className="grid grid-cols-2 gap-4">
                 {halls.map((hall) => (
-                  <div key={hall._id} className="card">
-                    <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>{hall.name}</h3>
-                    <div className="d-flex align-center gap-4 text-muted" style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
-                      <span className="d-flex align-center gap-1">
-                        <Users size={16} /> {hall.capacity} khách
-                      </span>
-                      <span className="d-flex align-center gap-1">
-                        <LayoutTemplate size={16} /> {hall.area} m²
-                      </span>
-                    </div>
-                    <p style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '1.1rem' }}>
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(hall.basePrice)}
-                    </p>
-
-                    {availability[hall._id] && (
-                      <div style={{ marginTop: '1rem', padding: '0.5rem', backgroundColor: '#f9fafb', borderRadius: 'var(--radius-md)' }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>Lịch {date}:</div>
-                        <div className="d-flex gap-2">
-                          <span className={`status-badge ${availability[hall._id].MORNING ? 'active' : 'locked'}`}>Ca sáng</span>
-                          <span className={`status-badge ${availability[hall._id].EVENING ? 'active' : 'locked'}`}>Ca tối</span>
-                        </div>
+                  <div
+                    key={hall._id}
+                    className="card"
+                    style={{
+                      padding: 0,
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: '168px',
+                        flexShrink: 0,
+                        backgroundColor: '#e5e7eb',
+                        backgroundImage: `url(${getHallCoverSrcOrPlaceholder(hall)})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      }}
+                    />
+                    <div style={{ padding: 'var(--space-4)', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>{hall.name}</h3>
+                      <div className="d-flex align-center gap-4 text-muted" style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
+                        <span className="d-flex align-center gap-1">
+                          <Users size={16} /> {hall.capacity} khách
+                        </span>
+                        <span className="d-flex align-center gap-1">
+                          <LayoutTemplate size={16} /> {hall.area != null ? `${hall.area} m²` : '—'}
+                        </span>
                       </div>
-                    )}
+                      <p style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '1.1rem', margin: 0 }}>
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(hall.basePrice)}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -161,21 +174,60 @@ const RestaurantDetail = () => {
           </div>
 
           <div>
-            <div className="card" style={{ position: 'sticky', top: '100px' }}>
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Đặt lịch</h3>
+            <div
+              className="card"
+              style={{ position: 'sticky', top: '100px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}
+            >
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.35rem' }}>Đặt lịch</h3>
+              <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '1rem', lineHeight: 1.45 }}>
+                Lịch 14 ngày tới hiển thị sẵn: xanh = còn trống, đỏ = đã hết chỗ cho ca đó.
+              </p>
 
-              <form onSubmit={checkAvailability} style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-                <div className="input-group">
-                  <label>Chọn ngày</label>
-                  <div className="input-wrapper">
-                    <CalendarDays className="input-icon" size={20} />
-                    <input type="date" className="input-field with-icon" required value={date} onChange={(e) => setDate(e.target.value)} />
+              {bookingHalls.length === 0 ? (
+                <p className="text-muted" style={{ fontSize: '0.9rem' }}>Hiện chưa có sảnh mở đặt chỗ.</p>
+              ) : (
+                <>
+                  <div className="input-group" style={{ marginBottom: '1rem' }}>
+                    <label>Chọn sảnh</label>
+                    <select
+                      className="input-field"
+                      value={sidebarHallId}
+                      onChange={(e) => {
+                        setSidebarHallId(e.target.value);
+                        setPick({ date: '', shift: 'MORNING' });
+                      }}
+                    >
+                      {bookingHalls.map((h) => (
+                        <option key={h._id} value={h._id}>
+                          {h.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
-                <button type="submit" className="btn btn-outline full-width">
-                  Kiểm tra lịch trống
-                </button>
-              </form>
+
+                  <div style={{ marginBottom: '1rem', maxWidth: '100%', overflowX: 'auto' }}>
+                    <HallShiftCalendar
+                      hallId={sidebarHallId}
+                      loadRange={fetchHallAvailabilityRange}
+                      value={pick}
+                      onChange={setPick}
+                      mode="customer"
+                    />
+                  </div>
+
+                  {sidebarHall && (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <div className="text-muted" style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.04em' }}>
+                        GIÁ NIÊM YẾT (sảnh đã chọn)
+                      </div>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '0.25rem' }}>
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(sidebarHall.basePrice)}
+                        <span className="text-muted" style={{ fontSize: '0.85rem', fontWeight: 500 }}> / ca</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
               <div style={{ marginBottom: '1.5rem' }}>
                 <div className="d-flex align-center gap-2 mb-2" style={{ marginBottom: '0.5rem' }}>
@@ -186,7 +238,25 @@ const RestaurantDetail = () => {
                 </div>
               </div>
 
-              <Link to={`/book/${restaurant._id}`} className="btn btn-primary full-width" style={{ justifyContent: 'center' }}>
+              <Link
+                to={`/book/${restaurant._id}`}
+                state={{
+                  fromRestaurant: {
+                    hallId: sidebarHallId,
+                    bookingDate: pick.date,
+                    shift: pick.shift,
+                  },
+                }}
+                className="btn btn-primary full-width"
+                style={{ justifyContent: 'center' }}
+                onClick={(e) => {
+                  if (!pick.date || !sidebarHallId) {
+                    e.preventDefault();
+                    toast.info('Vui lòng chọn ngày và ca còn trống trên lịch.');
+                  }
+                }}
+              >
+                <CalendarDays size={18} style={{ marginRight: '0.35rem' }} />
                 Đặt chỗ <ChevronRight size={18} />
               </Link>
             </div>

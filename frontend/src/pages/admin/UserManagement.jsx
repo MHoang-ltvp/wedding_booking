@@ -5,6 +5,19 @@ import { fetchAdminUsers } from '../../services/admin.service';
 import { toast } from 'react-toastify';
 import { Lock, Unlock, Search } from 'lucide-react';
 
+function labelRole(role) {
+  if (role === 'CUSTOMER') return 'Khách hàng';
+  if (role === 'VENDOR') return 'Nhà cung cấp';
+  if (role === 'ADMIN') return 'Quản trị';
+  return role;
+}
+
+function labelUserStatus(s) {
+  if (s === 'ACTIVE') return 'Hoạt động';
+  if (s === 'LOCKED') return 'Đã khóa';
+  return s;
+}
+
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,17 +42,17 @@ const UserManagement = () => {
     try {
       const newStatus = currentStatus === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
       await api.put(paths.admin.userStatus(userId), { status: newStatus });
-      toast.success(`User ${newStatus.toLowerCase()} successfully`);
+      toast.success(newStatus === 'ACTIVE' ? 'Đã mở khóa tài khoản.' : 'Đã khóa tài khoản.');
       fetchUsers();
     } catch (error) {
-      toast.error('Failed to update user status');
+      toast.error('Không cập nhật được trạng thái người dùng.');
     }
   };
 
   return (
     <div className="fade-in">
       <div className="page-header">
-        <h1 className="page-title">User Management</h1>
+        <h1 className="page-title">Quản lý người dùng</h1>
         <div className="d-flex gap-3 align-center">
           <div className="input-group" style={{marginBottom: 0}}>
             <select 
@@ -48,9 +61,9 @@ const UserManagement = () => {
               onChange={(e) => setRoleFilter(e.target.value)}
               style={{height: '40px', padding: '0 1rem'}}
             >
-              <option value="">All Roles</option>
-              <option value="CUSTOMER">Customer</option>
-              <option value="VENDOR">Vendor</option>
+              <option value="">Tất cả vai trò</option>
+              <option value="CUSTOMER">Khách hàng</option>
+              <option value="VENDOR">Nhà cung cấp</option>
             </select>
           </div>
         </div>
@@ -58,22 +71,22 @@ const UserManagement = () => {
 
       <div className="card" style={{padding: 0}}>
         {loading ? (
-          <div style={{padding: 'var(--space-5)', textAlign: 'center'}}>Loading...</div>
+          <div style={{padding: 'var(--space-5)', textAlign: 'center'}}>Đang tải…</div>
         ) : (
           <div style={{overflowX: 'auto'}}>
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Email & Phone</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>Họ tên</th>
+                  <th>Email &amp; điện thoại</th>
+                  <th>Vai trò</th>
+                  <th>Trạng thái</th>
+                  <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
-                  <tr><td colSpan="5" className="text-center">No users found</td></tr>
+                  <tr><td colSpan="5" className="text-center">Không có người dùng</td></tr>
                 ) : (
                   users.map(u => (
                     <tr key={u._id}>
@@ -84,12 +97,12 @@ const UserManagement = () => {
                       </td>
                       <td>
                         <span style={{fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)'}}>
-                          {u.role}
+                          {labelRole(u.role)}
                         </span>
                       </td>
                       <td>
                         <span className={`status-badge ${u.status === 'ACTIVE' ? 'active' : 'locked'}`}>
-                          {u.status}
+                          {labelUserStatus(u.status)}
                         </span>
                       </td>
                       <td>
@@ -99,7 +112,7 @@ const UserManagement = () => {
                             style={{padding: '0.25rem 0.5rem', fontSize: '0.85rem'}}
                             onClick={() => toggleStatus(u._id, u.status)}
                           >
-                            {u.status === 'ACTIVE' ? <><Lock size={14}/> Lock</> : <><Unlock size={14}/> Unlock</>}
+                            {u.status === 'ACTIVE' ? <><Lock size={14}/> Khóa</> : <><Unlock size={14}/> Mở khóa</>}
                           </button>
                         )}
                       </td>

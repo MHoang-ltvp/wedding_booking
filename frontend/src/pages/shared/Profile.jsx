@@ -28,9 +28,9 @@ const Profile = () => {
     try {
       await api.put(paths.users.me, formData);
       await checkAuth(); // refresh user context
-      toast.success('Profile updated successfully');
+      toast.success('Đã cập nhật hồ sơ.');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update profile');
+      toast.error(error.response?.data?.message || 'Không cập nhật được hồ sơ.');
     } finally {
       setIsLoading(false);
     }
@@ -39,19 +39,19 @@ const Profile = () => {
   return (
     <div className="container" style={{maxWidth: '800px', marginTop: 'var(--space-5)'}}>
       <div className="page-header">
-        <h1 className="page-title">My Profile</h1>
+        <h1 className="page-title">Hồ sơ của tôi</h1>
       </div>
 
       <div className="card fade-in">
         <form onSubmit={handleSubmit}>
           <div className="input-group">
-            <label>Email Address</label>
+            <label>Email</label>
             <input type="email" className="input-field" value={user?.email || ''} disabled />
-            <small className="text-muted">Email cannot be changed.</small>
+            <small className="text-muted">Không đổi được email.</small>
           </div>
 
           <div className="input-group">
-            <label>Full Name</label>
+            <label>Họ và tên</label>
             <input 
               type="text" 
               className="input-field" 
@@ -62,7 +62,7 @@ const Profile = () => {
           </div>
 
           <div className="input-group">
-            <label>Phone Number</label>
+            <label>Số điện thoại</label>
             <input 
               type="text" 
               className="input-field" 
@@ -74,7 +74,7 @@ const Profile = () => {
           
           <div style={{marginTop: 'var(--space-4)'}}>
             <button type="submit" className="btn btn-primary" disabled={isLoading}>
-              <Save size={18} /> {isLoading ? 'Saving...' : 'Save Changes'}
+              <Save size={18} /> {isLoading ? 'Đang lưu…' : 'Lưu thay đổi'}
             </button>
           </div>
         </form>
